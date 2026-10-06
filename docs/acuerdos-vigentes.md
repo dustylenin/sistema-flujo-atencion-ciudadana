@@ -31,7 +31,7 @@ Status muestra información en tarjetas por oficina, con orden fijo: operador y 
 
 El administrador configura oficinas, trámites, cuentas, roles y asignaciones. Los trámites se gestionan desde Trámites y se vinculan a una única oficina.
 
-Para el lanzamiento se contempla un operador por oficina. La posibilidad de más operadores por oficina se conserva para el crecimiento del sistema. Un operador puede tener varias oficinas asignadas por el administrador; no selecciona oficinas desde su panel.
+Para el lanzamiento se contempla un operador por oficina como organización inicial, no como una prohibición técnica de una segunda asignación. La posibilidad de más operadores por oficina se conserva para el crecimiento del sistema. Un operador puede tener varias oficinas asignadas por el administrador; no selecciona oficinas desde su panel.
 
 Desactivar una oficina evita nuevos registros en ella, permite terminar los folios pendientes y conserva el historial. Puede reactivarse. Desactivar una cuenta bloquea su acceso y conserva su historial; también puede reactivarse. Un trámite desactivado deja de estar disponible para nuevos registros y conserva su historial.
 
