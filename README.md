@@ -6,13 +6,13 @@ El sistema busca mantener un registro trazable desde la recepción hasta el resu
 
 ## Estado del proyecto
 
-**Etapa actual: estructura inicial y base del usuario personalizado.** Este repositorio conserva la visión, los requisitos y los flujos de la versión 1 e incorpora la configuración base de Django y `Usuario(AbstractUser)`. La aplicación funcional todavía no está implementada: no hay oficinas, asignaciones, pantallas ni reglas de atención. No se han generado ni ejecutado migraciones del usuario personalizado.
+**Etapa actual: estructura inicial, base del usuario personalizado y conexión local a PostgreSQL verificada.** Este repositorio conserva la visión, los requisitos y los flujos de la versión 1 e incorpora la configuración base de Django y `Usuario(AbstractUser)`. La aplicación funcional todavía no está implementada: no hay oficinas, asignaciones, pantallas ni reglas de atención. Todavía no se han generado ni aplicado migraciones.
 
 ## Tecnologías elegidas
 
 - Interfaz: HTML, CSS y JavaScript con plantillas de Django.
 - Servidor: Python con Django **5.2.17 LTS**, con soporte extendido hasta abril de 2028 según la [política oficial](https://www.djangoproject.com/download/).
-- Base de datos: PostgreSQL **18.6** recomendado, con soporte de la rama 18 hasta noviembre de 2030 según la [política oficial](https://www.postgresql.org/support/versioning/).
+- Base de datos: PostgreSQL **16.15** funcionando en el entorno local verificado. La recomendación inicial de PostgreSQL **18.6** no describe la instalación actual; ambas ramas figuran en la [política oficial de versiones](https://www.postgresql.org/support/versioning/).
 - Python recomendado: **3.14.8**. El entorno virtual local se creó con **3.12.3**, disponible en Linux Mint 22.3. Django 5.2 admite ambas ramas según su [documentación de compatibilidad](https://docs.djangoproject.com/en/5.2/releases/5.2/#python-compatibility). La comprobación local no valida todavía Python 3.14.
 - Conexión PostgreSQL: Psycopg **3.3.6**, con paquete binario para desarrollo local; carga de `.env`: python-dotenv **1.2.4**. Las dependencias están fijadas en `requirements.txt`.
 
@@ -56,39 +56,77 @@ python -m pip check
 
 Si Python 3.14.8 ya está instalado, crear un entorno virtual nuevo con `python3.14 -m venv .venv` en lugar de `python3 -m venv .venv`, sin reemplazar el Python del sistema. Si ya existe un entorno con otra versión, conservarlo o moverlo antes de crear el nuevo. Usar la última revisión de mantenimiento de la rama elegida al actualizar el entorno.
 
-PostgreSQL es un servicio independiente; instalar Psycopg no instala el servidor. Para obtener la rama 18, seguir la [guía oficial para Ubuntu](https://www.postgresql.org/download/linux/ubuntu/) y configurar el repositorio correspondiente a la base Ubuntu de Linux Mint (Mint 22.3 usa `noble`, no `zena`). Una vez configurado ese repositorio:
+PostgreSQL es un servicio independiente; instalar Psycopg no instala el servidor. El entorno local ya tiene PostgreSQL 16.15 funcionando. Para preparar otra instalación con la rama 16, usar los paquetes disponibles para la base Ubuntu de Linux Mint (Mint 22.3 usa `noble`, no `zena`). Si hace falta configurar un repositorio, seguir la [guía oficial para Ubuntu](https://www.postgresql.org/download/linux/ubuntu/):
 
 ```bash
-sudo apt install postgresql-18 postgresql-client-18
+sudo apt install postgresql-16 postgresql-client-16
 psql --version
+pg_lsclusters
 ```
 
-Preparar una base vacía y un usuario local con contraseña mediante PostgreSQL. Por ejemplo, desde `sudo -u postgres psql`:
+En una instalación nueva, preparar una base vacía y un usuario local con contraseña desde `sudo -u postgres psql`. Omitir este paso si ya existen, como en el entorno verificado:
 
 ```sql
-CREATE ROLE atencion_local LOGIN;
-\password atencion_local
-CREATE DATABASE atencion_ciudadana OWNER atencion_local;
+CREATE ROLE atencion_app LOGIN;
+\password atencion_app
+CREATE DATABASE atencion_ciudadana OWNER atencion_app;
 \q
 ```
 
-`\password` solicita la contraseña de forma interactiva. Esto prepara la conexión; no crea tablas de Django. En el entorno revisado todavía no se ha instalado PostgreSQL ni creado la base.
+`\password` solicita la contraseña de forma interactiva, sin incluirla en el comando. Esto prepara la conexión; no crea tablas de Django.
 
-Copiar la configuración de ejemplo:
-
-```bash
-cp .env.example .env
-```
-
-Completar en `.env` `DJANGO_SECRET_KEY`, `POSTGRES_USER` y `POSTGRES_PASSWORD`, y ajustar nombre de base, host y puerto a la instalación local. Para generar una clave local, con el entorno virtual activo:
+Copiar la configuración de ejemplo únicamente si `.env` no existe, conservando los valores de un archivo local existente:
 
 ```bash
-python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+cp -n .env.example .env
+chmod 600 .env
+nano .env
 ```
 
-Guardar el resultado únicamente en `.env`. Las variables exportadas en el entorno tienen prioridad sobre ese archivo. `DJANGO_DEBUG` acepta `true` o `false`; el ejemplo activa depuración solo para desarrollo local. `DJANGO_ALLOWED_HOSTS` usa valores separados por comas. La configuración rechaza claves o credenciales obligatorias vacías y utiliza PostgreSQL, sin alternativa automática a SQLite.
+Configurar estos valores en `.env`; los marcadores de secretos son ejemplos y deben sustituirse localmente, sin publicarlos:
 
-Con las variables completas, las comprobaciones disponibles son:
+```dotenv
+DJANGO_SECRET_KEY=REEMPLAZAR_CON_CLAVE_ALEATORIA
+POSTGRES_DB=atencion_ciudadana
+POSTGRES_USER=atencion_app
+POSTGRES_PASSWORD='REEMPLAZAR_CON_MI_CONTRASENA'
+POSTGRES_HOST=127.0.0.1
+POSTGRES_PORT=5432
+```
+
+Para generar y guardar directamente una clave aleatoria, sin mostrarla y conservando una clave ya configurada, usar el entorno virtual activo:
+
+```bash
+python - <<'PY'
+from django.core.management.utils import get_random_secret_key
+from dotenv import dotenv_values, set_key
+
+key = dotenv_values('.env').get('DJANGO_SECRET_KEY')
+if key in (None, '', 'REEMPLAZAR_CON_CLAVE_ALEATORIA'):
+    set_key('.env', 'DJANGO_SECRET_KEY', get_random_secret_key())
+PY
+chmod 600 .env
+git check-ignore -v -- .env
+```
+
+Mantener secretos únicamente en `.env`, ignorado por Git y con permisos de lectura y escritura exclusivos del propietario. Las variables exportadas en el entorno tienen prioridad sobre ese archivo. `DJANGO_DEBUG` acepta `true` o `false`; el ejemplo activa depuración solo para desarrollo local. `DJANGO_ALLOWED_HOSTS` usa valores separados por comas. La configuración rechaza claves o credenciales obligatorias vacías y utiliza PostgreSQL, sin alternativa automática a SQLite. No intentar conectar mientras haya marcadores de secretos.
+
+### Conexión local verificada
+
+PostgreSQL local **16.15** está funcionando con la base `atencion_ciudadana`, el usuario `atencion_app` y el destino `127.0.0.1:5432`. Desde el entorno virtual y la configuración real de Django, sus comprobaciones finalizaron sin incidencias y `django.db.connection` ejecutó `SELECT 1`, que devolvió **1**. La conexión confirmó la base y el usuario indicados. `.env` sigue ignorado por Git; no se publicaron contraseñas ni la clave de Django.
+
+Para reproducir únicamente la comprobación de conexión, después de completar `.env` y activar el entorno virtual:
+
+```bash
+python manage.py check
+python manage.py shell -c 'from django.db import connection; cursor = connection.cursor(); cursor.execute("SELECT 1"); print(cursor.fetchone()[0]); cursor.close(); connection.close()'
+```
+
+Estas comprobaciones no generan ni aplican migraciones y no verifican la persistencia del modelo ni sus restricciones.
+
+### Comprobaciones sin base de datos y validaciones pendientes
+
+Con las variables completas, las comprobaciones sin acceso a la base son:
 
 ```bash
 python -m pip check
@@ -98,7 +136,7 @@ python manage.py test usuarios --verbosity 2
 git diff --check
 ```
 
-`manage.py check` valida la configuración sin aplicar migraciones y no demuestra por sí solo que exista conexión a PostgreSQL. Las pruebas de usuarios usan `SimpleTestCase`, prohíben consultas a la base e interceptan los guardados válidos: no crean cuentas ni una base de pruebas. Todavía no ejecutar `makemigrations`, `migrate` ni `createsuperuser`. El arranque funcional sigue pendiente; no hay rutas de aplicación ni panel administrativo habilitado.
+`manage.py check` por sí solo no demuestra que exista conexión a PostgreSQL; esa conexión se comprobó separadamente con `SELECT 1`. Las pruebas de usuarios usan `SimpleTestCase`, prohíben consultas a la base e interceptan los guardados válidos: no crean cuentas ni una base de pruebas. Todavía no ejecutar `makemigrations`, `migrate` ni `createsuperuser`. El arranque funcional sigue pendiente; no hay rutas de aplicación ni panel administrativo habilitado.
 
 Quedan pendientes de validar en PostgreSQL la persistencia real, la unicidad de `username` y la restricción de roles, una vez que se autoricen y apliquen las migraciones. Las ocho pruebas sin base de datos no comprueban esos comportamientos en el servidor PostgreSQL.
 
