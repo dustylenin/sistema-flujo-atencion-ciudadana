@@ -6,7 +6,91 @@ El sistema busca mantener un registro trazable desde la recepción hasta el resu
 
 ## Estado del proyecto
 
-**Etapa actual: definición y documentación.** Este repositorio documenta la visión, los requisitos y los flujos de la versión 1. La aplicación todavía no está implementada y no se ha definido una tecnología de desarrollo.
+**Etapa actual: estructura inicial de desarrollo.** Este repositorio conserva la visión, los requisitos y los flujos de la versión 1 e incorpora la configuración base de Django. La aplicación funcional todavía no está implementada: no hay pantallas, modelos de negocio ni reglas de atención. No se han ejecutado migraciones; primero se revisará el modelo de usuarios.
+
+## Tecnologías elegidas
+
+- Interfaz: HTML, CSS y JavaScript con plantillas de Django.
+- Servidor: Python con Django **5.2.17 LTS**, con soporte extendido hasta abril de 2028 según la [política oficial](https://www.djangoproject.com/download/).
+- Base de datos: PostgreSQL **18.6** recomendado, con soporte de la rama 18 hasta noviembre de 2030 según la [política oficial](https://www.postgresql.org/support/versioning/).
+- Python recomendado: **3.14.8**. El entorno virtual local se creó con **3.12.3**, disponible en Linux Mint 22.3. Django 5.2 admite ambas ramas según su [documentación de compatibilidad](https://docs.djangoproject.com/en/5.2/releases/5.2/#python-compatibility). La comprobación local no valida todavía Python 3.14.
+- Conexión PostgreSQL: Psycopg **3.3.6**, con paquete binario para desarrollo local; carga de `.env`: python-dotenv **1.2.4**. Las dependencias están fijadas en `requirements.txt`.
+
+## Estructura inicial
+
+```text
+config/          Configuración, rutas vacías y entradas ASGI/WSGI
+docs/            Documentación del producto conservada
+templates/       Carpeta reservada para plantillas; sin pantallas
+static/css/      Carpeta reservada para estilos
+static/js/       Carpeta reservada para JavaScript
+static/img/      Carpeta reservada para imágenes
+manage.py        Comandos de Django
+requirements.txt Dependencias del entorno
+.env.example     Variables de ejemplo sin credenciales reales
+.gitignore       Excluye entorno virtual, secretos y archivos generados
+```
+
+No se ha creado una aplicación de negocio ni definido `AUTH_USER_MODEL`. Los módulos de autenticación incluidos son infraestructura de Django, no una aprobación de su modelo de usuario predeterminado. Revisar el modelo de usuarios antes de crear o aplicar migraciones.
+
+## Preparación en Linux Mint
+
+Ejecutar desde la raíz del repositorio. Para usar el Python de la distribución:
+
+```bash
+sudo apt update
+sudo apt install python3 python3-venv python3-pip
+python3 --version
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m pip check
+```
+
+Si Python 3.14.8 ya está instalado, crear un entorno virtual nuevo con `python3.14 -m venv .venv` en lugar de `python3 -m venv .venv`, sin reemplazar el Python del sistema. Si ya existe un entorno con otra versión, conservarlo o moverlo antes de crear el nuevo. Usar la última revisión de mantenimiento de la rama elegida al actualizar el entorno.
+
+PostgreSQL es un servicio independiente; instalar Psycopg no instala el servidor. Para obtener la rama 18, seguir la [guía oficial para Ubuntu](https://www.postgresql.org/download/linux/ubuntu/) y configurar el repositorio correspondiente a la base Ubuntu de Linux Mint (Mint 22.3 usa `noble`, no `zena`). Una vez configurado ese repositorio:
+
+```bash
+sudo apt install postgresql-18 postgresql-client-18
+psql --version
+```
+
+Preparar una base vacía y un usuario local con contraseña mediante PostgreSQL. Por ejemplo, desde `sudo -u postgres psql`:
+
+```sql
+CREATE ROLE atencion_local LOGIN;
+\password atencion_local
+CREATE DATABASE atencion_ciudadana OWNER atencion_local;
+\q
+```
+
+`\password` solicita la contraseña de forma interactiva. Esto prepara la conexión; no crea tablas de Django. En el entorno revisado todavía no se ha instalado PostgreSQL ni creado la base.
+
+Copiar la configuración de ejemplo:
+
+```bash
+cp .env.example .env
+```
+
+Completar en `.env` `DJANGO_SECRET_KEY`, `POSTGRES_USER` y `POSTGRES_PASSWORD`, y ajustar nombre de base, host y puerto a la instalación local. Para generar una clave local, con el entorno virtual activo:
+
+```bash
+python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'
+```
+
+Guardar el resultado únicamente en `.env`. Las variables exportadas en el entorno tienen prioridad sobre ese archivo. `DJANGO_DEBUG` acepta `true` o `false`; el ejemplo activa depuración solo para desarrollo local. `DJANGO_ALLOWED_HOSTS` usa valores separados por comas. La configuración rechaza claves o credenciales obligatorias vacías y utiliza PostgreSQL, sin alternativa automática a SQLite.
+
+Con las variables completas, las comprobaciones disponibles son:
+
+```bash
+python -m pip check
+python -m compileall -q manage.py config
+python manage.py check
+git diff --check
+```
+
+`manage.py check` valida la configuración sin aplicar migraciones y no demuestra por sí solo que exista conexión a PostgreSQL. Todavía no ejecutar `makemigrations`, `migrate` ni `createsuperuser`. El arranque funcional se revisará después del modelo de usuarios; no hay rutas de aplicación ni panel administrativo habilitado.
 
 ## Usuarios
 

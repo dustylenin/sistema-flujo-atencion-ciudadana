@@ -1,0 +1,15 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+staticfiles/
+media/
+*.log
+.pytest_cache/
+.coverage
+htmlcov/
+.idea/
+.vscode/
