@@ -6,7 +6,7 @@ El sistema busca mantener un registro trazable desde la recepción hasta el resu
 
 ## Estado del proyecto
 
-**Etapa actual: estructura inicial de desarrollo.** Este repositorio conserva la visión, los requisitos y los flujos de la versión 1 e incorpora la configuración base de Django. La aplicación funcional todavía no está implementada: no hay pantallas, modelos de negocio ni reglas de atención. No se han ejecutado migraciones; primero se revisará el modelo de usuarios.
+**Etapa actual: estructura inicial y base del usuario personalizado.** Este repositorio conserva la visión, los requisitos y los flujos de la versión 1 e incorpora la configuración base de Django y `Usuario(AbstractUser)`. La aplicación funcional todavía no está implementada: no hay oficinas, asignaciones, pantallas ni reglas de atención. No se han generado ni ejecutado migraciones del usuario personalizado.
 
 ## Tecnologías elegidas
 
@@ -20,6 +20,7 @@ El sistema busca mantener un registro trazable desde la recepción hasta el resu
 
 ```text
 config/          Configuración, rutas vacías y entradas ASGI/WSGI
+usuarios/        Usuario personalizado, manager y pruebas sin base de datos
 docs/            Documentación del producto conservada
 templates/       Carpeta reservada para plantillas; sin pantallas
 static/css/      Carpeta reservada para estilos
@@ -31,7 +32,13 @@ requirements.txt Dependencias del entorno
 .gitignore       Excluye entorno virtual, secretos y archivos generados
 ```
 
-No se ha creado una aplicación de negocio ni definido `AUTH_USER_MODEL`. Los módulos de autenticación incluidos son infraestructura de Django, no una aprobación de su modelo de usuario predeterminado. Revisar el modelo de usuarios antes de crear o aplicar migraciones.
+`AUTH_USER_MODEL` apunta a `usuarios.Usuario`, basado en `AbstractUser`, conforme a la [decisión aprobada de usuarios y asignaciones](docs/decisiones/001-usuarios-y-asignaciones.md). Conserva `username` como identificador de acceso y los campos heredados. Solo se ha implementado la base del usuario; las asignaciones y la autorización funcional siguen pendientes.
+
+El campo `rol` es obligatorio, sin valor predeterminado, y admite `ADMINISTRADOR`, `RECEPCION` u `OPERADOR`. `create_user()` y `create_superuser()` exigen el argumento explícito `rol`; los valores vacíos o inválidos se rechazan antes de guardar. El guardado directo también valida el rol. La restricción del modelo para la base de datos se aplicará cuando se aprueben y ejecuten las migraciones; todavía no existe en PostgreSQL.
+
+`rol`, `is_active`, `is_staff` e `is_superuser` son independientes. El manager conserva el comportamiento técnico de Django al crear superusuarios, sin asignarles automáticamente el rol `ADMINISTRADOR`. Esos indicadores no implementan los permisos de las pantallas propias.
+
+`REQUIRED_FIELDS` conserva los campos de `AbstractUser` y añade `rol`: cuando se autorice usar `createsuperuser`, el modo interactivo solicitará el rol y el modo no interactivo requerirá `--rol` o `DJANGO_SUPERUSER_ROL`. Esto no crea una cuenta ahora ni habilita gestión de contraseñas o pantallas. La creación de cuentas desde Usuarios y la gestión exclusiva de contraseñas por el administrador siguen pendientes de implementación.
 
 ## Preparación en Linux Mint
 
@@ -85,12 +92,15 @@ Con las variables completas, las comprobaciones disponibles son:
 
 ```bash
 python -m pip check
-python -m compileall -q manage.py config
+python -m compileall -q manage.py config usuarios
 python manage.py check
+python manage.py test usuarios --verbosity 2
 git diff --check
 ```
 
-`manage.py check` valida la configuración sin aplicar migraciones y no demuestra por sí solo que exista conexión a PostgreSQL. Todavía no ejecutar `makemigrations`, `migrate` ni `createsuperuser`. El arranque funcional se revisará después del modelo de usuarios; no hay rutas de aplicación ni panel administrativo habilitado.
+`manage.py check` valida la configuración sin aplicar migraciones y no demuestra por sí solo que exista conexión a PostgreSQL. Las pruebas de usuarios usan `SimpleTestCase`, prohíben consultas a la base e interceptan los guardados válidos: no crean cuentas ni una base de pruebas. Todavía no ejecutar `makemigrations`, `migrate` ni `createsuperuser`. El arranque funcional sigue pendiente; no hay rutas de aplicación ni panel administrativo habilitado.
+
+Quedan pendientes de validar en PostgreSQL la persistencia real, la unicidad de `username` y la restricción de roles, una vez que se autoricen y apliquen las migraciones. Las ocho pruebas sin base de datos no comprueban esos comportamientos en el servidor PostgreSQL.
 
 ## Usuarios
 

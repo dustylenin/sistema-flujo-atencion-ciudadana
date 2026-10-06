@@ -1,4 +1,4 @@
-"""Configuración inicial. El modelo de usuarios está pendiente de revisión."""
+"""Configuración inicial con usuario personalizado; sin migraciones aplicadas."""
 import os
 from pathlib import Path
 
@@ -27,15 +27,17 @@ ALLOWED_HOSTS = [
     if host.strip()
 ]
 
-# Infraestructura de Django; no se ha decidido AUTH_USER_MODEL.
-# No ejecutar migraciones hasta revisar el modelo de usuarios.
+# Infraestructura de Django y base del usuario aprobado.
+# La generación y ejecución de migraciones siguen pendientes.
 INSTALLED_APPS = [
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "usuarios.apps.UsuariosConfig",
 ]
+AUTH_USER_MODEL = "usuarios.Usuario"
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
