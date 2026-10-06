@@ -6,7 +6,9 @@ El sistema busca mantener un registro trazable desde la recepción hasta el resu
 
 ## Estado del proyecto
 
-**Etapa actual: estructura inicial, base del usuario personalizado y conexión local a PostgreSQL verificada.** Este repositorio conserva la visión, los requisitos y los flujos de la versión 1 e incorpora la configuración base de Django y `Usuario(AbstractUser)`. La aplicación funcional todavía no está implementada: no hay oficinas, asignaciones, pantallas ni reglas de atención. Todavía no se han generado ni aplicado migraciones.
+**Etapa actual: estructura inicial, base del usuario personalizado y conexión local a PostgreSQL verificada.** Este repositorio conserva la visión, los requisitos y los flujos de la versión 1 e incorpora la configuración base de Django y `Usuario(AbstractUser)`. La aplicación funcional todavía no está implementada: no hay oficinas, asignaciones, pantallas ni reglas de atención. La migración inicial `usuarios/migrations/0001_initial.py` está generada y revisada; todavía no se han aplicado migraciones.
+
+Las comprobaciones de Django fueron satisfactorias y `makemigrations --check --dry-run` no detectó cambios de modelos pendientes. Se revisaron el SQL de `sqlmigrate usuarios 0001_initial` y el plan de `migrate --plan`, sin aplicar el SQL ni las operaciones del plan. La persistencia y las restricciones reales en PostgreSQL siguen pendientes de validar después de aplicar las migraciones.
 
 ## Tecnologías elegidas
 
@@ -136,7 +138,7 @@ python manage.py test usuarios --verbosity 2
 git diff --check
 ```
 
-`manage.py check` por sí solo no demuestra que exista conexión a PostgreSQL; esa conexión se comprobó separadamente con `SELECT 1`. Las pruebas de usuarios usan `SimpleTestCase`, prohíben consultas a la base e interceptan los guardados válidos: no crean cuentas ni una base de pruebas. Todavía no ejecutar `makemigrations`, `migrate` ni `createsuperuser`. El arranque funcional sigue pendiente; no hay rutas de aplicación ni panel administrativo habilitado.
+`manage.py check` por sí solo no demuestra que exista conexión a PostgreSQL; esa conexión se comprobó separadamente con `SELECT 1`. Las pruebas de usuarios usan `SimpleTestCase`, prohíben consultas a la base e interceptan los guardados válidos: no crean cuentas ni una base de pruebas. La migración inicial ya está generada; todavía no aplicar migraciones con `migrate` ni crear cuentas con `createsuperuser`. El arranque funcional sigue pendiente; no hay rutas de aplicación ni panel administrativo habilitado.
 
 Quedan pendientes de validar en PostgreSQL la persistencia real, la unicidad de `username` y la restricción de roles, una vez que se autoricen y apliquen las migraciones. Las ocho pruebas sin base de datos no comprueban esos comportamientos en el servidor PostgreSQL.
 
