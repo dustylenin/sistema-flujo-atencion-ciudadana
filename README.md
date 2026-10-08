@@ -6,9 +6,9 @@ El sistema busca mantener un registro trazable desde la recepción hasta el resu
 
 ## Estado del proyecto
 
-**Etapa actual: estructura inicial, base del usuario personalizado y conexión local a PostgreSQL verificada.** Este repositorio conserva la visión, los requisitos y los flujos de la versión 1 e incorpora la configuración base de Django y `Usuario(AbstractUser)`. La aplicación funcional todavía no está implementada: no hay oficinas, asignaciones, pantallas ni reglas de atención. La migración inicial `usuarios/migrations/0001_initial.py` está generada y revisada; todavía no se han aplicado migraciones.
+**Etapa actual: migraciones aplicadas y lectura, escritura y restricciones del usuario personalizado verificadas en PostgreSQL local.** Este repositorio conserva la visión, los requisitos y los flujos de la versión 1 e incorpora la configuración base de Django y `Usuario(AbstractUser)`. Se aplicaron las 16 migraciones de `contenttypes`, `auth`, `sessions` y `usuarios`, incluida `usuarios/migrations/0001_initial.py`. La aplicación funcional todavía no está implementada: no hay oficinas, asignaciones, pantallas ni reglas de atención.
 
-Las comprobaciones de Django fueron satisfactorias y `makemigrations --check --dry-run` no detectó cambios de modelos pendientes. Se revisaron el SQL de `sqlmigrate usuarios 0001_initial` y el plan de `migrate --plan`, sin aplicar el SQL ni las operaciones del plan. La persistencia y las restricciones reales en PostgreSQL siguen pendientes de validar después de aplicar las migraciones.
+Las comprobaciones de Django fueron satisfactorias: `check` no detectó problemas, `showmigrations` mostró todas las migraciones aplicadas, `migrate --plan` no mostró operaciones pendientes y `makemigrations --check --dry-run` no detectó cambios de modelos. Las pruebas puntuales comprobaron la creación y recuperación de usuarios de los tres roles, la unicidad de `username`, las restricciones del rol y la conservación del registro al desactivar una cuenta. Todas las operaciones con usuarios ficticios se revirtieron: quedaron cero usuarios y no se creó ninguna cuenta permanente. Los resultados y el alcance están en el [registro de validación en PostgreSQL](docs/pruebas/001-usuarios-postgresql.md).
 
 ## Tecnologías elegidas
 
@@ -36,7 +36,7 @@ requirements.txt Dependencias del entorno
 
 `AUTH_USER_MODEL` apunta a `usuarios.Usuario`, basado en `AbstractUser`, conforme a la [decisión aprobada de usuarios y asignaciones](docs/decisiones/001-usuarios-y-asignaciones.md). Conserva `username` como identificador de acceso y los campos heredados. Solo se ha implementado la base del usuario; las asignaciones y la autorización funcional siguen pendientes.
 
-El campo `rol` es obligatorio, sin valor predeterminado, y admite `ADMINISTRADOR`, `RECEPCION` u `OPERADOR`. `create_user()` y `create_superuser()` exigen el argumento explícito `rol`; los valores vacíos o inválidos se rechazan antes de guardar. El guardado directo también valida el rol. La restricción del modelo para la base de datos se aplicará cuando se aprueben y ejecuten las migraciones; todavía no existe en PostgreSQL.
+El campo `rol` es obligatorio, sin valor predeterminado, y admite `ADMINISTRADOR`, `RECEPCION` u `OPERADOR`. `create_user()` y `create_superuser()` exigen el argumento explícito `rol`; los valores vacíos o inválidos se rechazan antes de guardar. El guardado directo también valida el rol. En PostgreSQL ya se comprobaron `UNIQUE (username)`, `NOT NULL` de `rol` y la restricción `usuarios_usuario_rol_valido` para los tres roles, incluidos intentos mediante `update()` que omiten la validación de `save()`.
 
 `rol`, `is_active`, `is_staff` e `is_superuser` son independientes. El manager conserva el comportamiento técnico de Django al crear superusuarios, sin asignarles automáticamente el rol `ADMINISTRADOR`. Esos indicadores no implementan los permisos de las pantallas propias.
 
@@ -126,7 +126,7 @@ python manage.py shell -c 'from django.db import connection; cursor = connection
 
 Estas comprobaciones no generan ni aplican migraciones y no verifican la persistencia del modelo ni sus restricciones.
 
-### Comprobaciones sin base de datos y validaciones pendientes
+### Comprobaciones sin base de datos
 
 Con las variables completas, las comprobaciones sin acceso a la base son:
 
@@ -138,9 +138,24 @@ python manage.py test usuarios --verbosity 2
 git diff --check
 ```
 
-`manage.py check` por sí solo no demuestra que exista conexión a PostgreSQL; esa conexión se comprobó separadamente con `SELECT 1`. Las pruebas de usuarios usan `SimpleTestCase`, prohíben consultas a la base e interceptan los guardados válidos: no crean cuentas ni una base de pruebas. La migración inicial ya está generada; todavía no aplicar migraciones con `migrate` ni crear cuentas con `createsuperuser`. El arranque funcional sigue pendiente; no hay rutas de aplicación ni panel administrativo habilitado.
+`manage.py check` por sí solo no demuestra que exista conexión a PostgreSQL; esa conexión se comprobó separadamente con `SELECT 1`. Las ocho pruebas de usuarios existentes usan `SimpleTestCase`, prohíben consultas a la base e interceptan los guardados válidos: no crean cuentas ni una base de pruebas y no comprueban las restricciones del servidor PostgreSQL.
 
-Quedan pendientes de validar en PostgreSQL la persistencia real, la unicidad de `username` y la restricción de roles, una vez que se autoricen y apliquen las migraciones. Las ocho pruebas sin base de datos no comprueban esos comportamientos en el servidor PostgreSQL.
+### Migraciones y validación en PostgreSQL
+
+Se ejecutó `.venv/bin/python manage.py migrate` sobre la base local `atencion_ciudadana`, inicialmente sin tablas ni migraciones aplicadas. Las 16 migraciones terminaron correctamente: dos de `contenttypes`, doce de `auth`, una de `sessions` y una de `usuarios`. No se usó `--fake` ni se borraron tablas o reinició la base.
+
+Después se ejecutaron con el mismo entorno virtual:
+
+```bash
+.venv/bin/python manage.py check
+.venv/bin/python manage.py showmigrations
+.venv/bin/python manage.py migrate --plan
+.venv/bin/python manage.py makemigrations --check --dry-run
+```
+
+Todas las comprobaciones fueron satisfactorias, sin migraciones ni cambios de modelos pendientes. Se confirmó el modelo activo `usuarios.Usuario` y la existencia de `usuarios_usuario`. Las pruebas de lectura, escritura, contraseñas mediante `check_password`, desactivación y restricciones se realizaron dentro de una transacción revertida, con bloques `atomic` internos para los errores de integridad esperados y captura fuera de esos bloques. No quedó ningún usuario ficticio ni se creó una cuenta permanente.
+
+Fueron pruebas puntuales; no se añadió una suite automática de integración. La comprobación de `check_password` no valida el inicio de sesión ni la fortaleza de contraseñas. Siguen pendientes el acceso mediante pantallas, los permisos funcionales, las oficinas y las asignaciones. El arranque funcional sigue pendiente; no hay rutas de aplicación ni panel administrativo habilitado. Véase el [registro de casos y resultados](docs/pruebas/001-usuarios-postgresql.md).
 
 ## Usuarios
 
@@ -176,6 +191,7 @@ Las denegaciones, los cierres por ausencia, las pausas y los traslados se docume
 - [Visión del producto](docs/vision.md): problema, objetivos, usuarios y alcance.
 - [Requisitos](docs/requirements.md): requisitos funcionales y no funcionales de la versión 1.
 - [Flujos de usuario](docs/user-flow.md): recorridos de administrador, recepcionista y operador, incluidas las excepciones.
+- [Validación de usuarios en PostgreSQL](docs/pruebas/001-usuarios-postgresql.md): migraciones aplicadas, pruebas puntuales, restricciones y alcance de la comprobación.
 
 ## Evolución prevista
 
