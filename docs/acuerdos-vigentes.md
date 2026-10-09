@@ -39,7 +39,9 @@ Para el lanzamiento se contempla un operador por oficina como organización inic
 
 El administrador solo puede crear una asignación entre operador y oficina cuando la cuenta tiene rol `OPERADOR`, la cuenta está activa y la oficina está activa.
 
-El administrador retira una oficina a un operador mediante la desactivación de su asignación, sin eliminar el registro. Puede reactivarla utilizando el mismo registro cuando la cuenta tenga rol `OPERADOR` y tanto la cuenta como la oficina estén activas. Las atenciones anteriores conservan su historial. Queda pendiente definir el tratamiento de folios abiertos al retirar una asignación.
+El administrador retira una oficina a un operador mediante la desactivación de su asignación, sin eliminar el registro. Puede reactivarla utilizando el mismo registro cuando la cuenta tenga rol `OPERADOR` y tanto la cuenta como la oficina estén activas. Las atenciones anteriores conservan su historial.
+
+No se permite desactivar una asignación operador-oficina mientras ese operador tenga folios asignados sin finalizar en esa oficina. Los folios que esperan en la cola de la oficina sin operador asignado no bloquean la desactivación.
 
 El sistema no permitirá eliminar físicamente oficinas ni trámites. Se utilizará la desactivación y se conservarán sus registros y referencias históricas. Desactivar una oficina evita nuevos registros en ella y permite terminar los folios pendientes. Puede reactivarse. Desactivar una cuenta bloquea su acceso y conserva su historial; también puede reactivarse.
 
