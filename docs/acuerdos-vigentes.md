@@ -43,6 +43,8 @@ El administrador retira una oficina a un operador mediante la desactivación de 
 
 No se permite desactivar una asignación operador-oficina mientras ese operador tenga folios asignados sin finalizar en esa oficina. Los folios que esperan en la cola de la oficina sin operador asignado no bloquean la desactivación.
 
+El administrador no puede cambiar una cuenta de rol `OPERADOR` a otro rol mientras tenga asignaciones de oficinas activas o folios asignados sin finalizar. Primero deben resolverse los folios conforme a los acuerdos y desactivarse las asignaciones. Se conservan los registros y el historial. Si la cuenta vuelve a tener rol `OPERADOR`, el administrador puede reactivar sus asignaciones bajo las condiciones ya aprobadas.
+
 El sistema no permitirá eliminar físicamente oficinas ni trámites. Se utilizará la desactivación y se conservarán sus registros y referencias históricas. Desactivar una oficina evita nuevos registros en ella y permite terminar los folios pendientes. Puede reactivarse. Desactivar una cuenta bloquea su acceso y conserva su historial; también puede reactivarse.
 
 Un trámite desactivado deja de estar disponible para nuevos registros. El administrador puede reactivarlo, conservando el mismo registro y su historial. Para admitir nuevos registros, tanto el trámite como su oficina deben estar activos.
