@@ -37,6 +37,8 @@ La oficina de un trámite queda fija desde su creación y no puede cambiarse pos
 
 Para el lanzamiento se contempla un operador por oficina como organización inicial, no como una prohibición técnica de una segunda asignación. La posibilidad de más operadores por oficina se conserva para el crecimiento del sistema. Un operador puede tener varias oficinas asignadas por el administrador; no selecciona oficinas desde su panel.
 
+El administrador solo puede crear una asignación entre operador y oficina cuando la cuenta tiene rol `OPERADOR`, la cuenta está activa y la oficina está activa.
+
 El sistema no permitirá eliminar físicamente oficinas ni trámites. Se utilizará la desactivación y se conservarán sus registros y referencias históricas. Desactivar una oficina evita nuevos registros en ella y permite terminar los folios pendientes. Puede reactivarse. Desactivar una cuenta bloquea su acceso y conserva su historial; también puede reactivarse.
 
 Un trámite desactivado deja de estar disponible para nuevos registros. El administrador puede reactivarlo, conservando el mismo registro y su historial. Para admitir nuevos registros, tanto el trámite como su oficina deben estar activos.
