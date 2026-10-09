@@ -31,6 +31,8 @@ Status muestra información en tarjetas por oficina, con orden fijo: operador y 
 
 El administrador configura oficinas, trámites, cuentas, roles y asignaciones. Los trámites se gestionan desde Trámites y se vinculan a una única oficina.
 
+El nombre de una oficina es único en todo el sistema. El nombre de un trámite es único dentro de su oficina y puede repetirse en otras oficinas. Estas reglas incluyen registros activos y desactivados. Al comparar nombres, no se distinguen mayúsculas y minúsculas ni espacios al principio o al final.
+
 La oficina de un trámite queda fija desde su creación y no puede cambiarse posteriormente. Si el trámite se ofrece en otra oficina, se crea un nuevo registro asociado a ella. El anterior se desactiva cuando deje de ofrecerse en su oficina original, conservando su historial.
 
 Para el lanzamiento se contempla un operador por oficina como organización inicial, no como una prohibición técnica de una segunda asignación. La posibilidad de más operadores por oficina se conserva para el crecimiento del sistema. Un operador puede tener varias oficinas asignadas por el administrador; no selecciona oficinas desde su panel.
