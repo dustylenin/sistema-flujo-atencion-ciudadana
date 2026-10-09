@@ -6,9 +6,9 @@ El sistema busca mantener un registro trazable desde la recepción hasta el resu
 
 ## Estado del proyecto
 
-**Etapa actual: migraciones aplicadas y lectura, escritura y restricciones del usuario personalizado verificadas en PostgreSQL local.** Este repositorio conserva la visión, los requisitos y los flujos de la versión 1 e incorpora la configuración base de Django y `Usuario(AbstractUser)`. Se aplicaron las 16 migraciones de `contenttypes`, `auth`, `sessions` y `usuarios`, incluida `usuarios/migrations/0001_initial.py`. La aplicación funcional todavía no está implementada: no hay oficinas, asignaciones, pantallas ni reglas de atención.
+**Etapa actual: usuario personalizado verificado en PostgreSQL local y base de oficinas y trámites implementada y verificada en PostgreSQL de pruebas.** Este repositorio conserva la visión, los requisitos y los flujos de la versión 1 e incorpora la configuración base de Django y `Usuario(AbstractUser)`. Se aplicaron las 16 migraciones de `contenttypes`, `auth`, `sessions` y `usuarios`, incluida `usuarios/migrations/0001_initial.py`. Los modelos `Oficina` y `Tramite` superaron su validación en una base exclusiva de pruebas; sus migraciones del proyecto todavía no se han generado ni aplicado. Asignaciones, folios, pantallas, permisos funcionales e historial de actividad siguen pendientes.
 
-Las comprobaciones de Django fueron satisfactorias: `check` no detectó problemas, `showmigrations` mostró todas las migraciones aplicadas, `migrate --plan` no mostró operaciones pendientes y `makemigrations --check --dry-run` no detectó cambios de modelos. Las pruebas puntuales comprobaron la creación y recuperación de usuarios de los tres roles, la unicidad de `username`, las restricciones del rol y la conservación del registro al desactivar una cuenta. Todas las operaciones con usuarios ficticios se revirtieron: quedaron cero usuarios y no se creó ninguna cuenta permanente. Los resultados y el alcance están en el [registro de validación en PostgreSQL](docs/pruebas/001-usuarios-postgresql.md).
+Tras aplicar las migraciones de usuarios, las comprobaciones de Django fueron satisfactorias: `check` no detectó problemas, `showmigrations` mostró todas las migraciones aplicadas, `migrate --plan` no mostró operaciones pendientes y `makemigrations --check --dry-run` no detectó cambios de modelos en esa etapa. Las pruebas puntuales comprobaron la creación y recuperación de usuarios de los tres roles, la unicidad de `username`, las restricciones del rol y la conservación del registro al desactivar una cuenta. Todas las operaciones con usuarios ficticios se revirtieron: quedaron cero usuarios y no se creó ninguna cuenta permanente. Los resultados y el alcance están en el [registro de validación en PostgreSQL](docs/pruebas/001-usuarios-postgresql.md).
 
 ## Tecnologías elegidas
 
@@ -23,6 +23,8 @@ Las comprobaciones de Django fueron satisfactorias: `check` no detectó problema
 ```text
 config/          Configuración, rutas vacías y entradas ASGI/WSGI
 usuarios/        Usuario personalizado, manager y pruebas sin base de datos
+oficinas/        Catálogo de oficinas, protecciones compartidas y pruebas
+tramites/        Catálogo de trámites con oficina fija y pruebas
 docs/            Documentación del producto conservada
 templates/       Carpeta reservada para plantillas; sin pantallas
 static/css/      Carpeta reservada para estilos
@@ -34,7 +36,7 @@ requirements.txt Dependencias del entorno
 .gitignore       Excluye entorno virtual, secretos y archivos generados
 ```
 
-`AUTH_USER_MODEL` apunta a `usuarios.Usuario`, basado en `AbstractUser`, conforme a la [decisión aprobada de usuarios y asignaciones](docs/decisiones/001-usuarios-y-asignaciones.md). Conserva `username` como identificador de acceso y los campos heredados. Solo se ha implementado la base del usuario; las asignaciones y la autorización funcional siguen pendientes.
+`AUTH_USER_MODEL` apunta a `usuarios.Usuario`, basado en `AbstractUser`, conforme a la [decisión aprobada de usuarios y asignaciones](docs/decisiones/001-usuarios-y-asignaciones.md). Conserva `username` como identificador de acceso y los campos heredados. Las asignaciones y la autorización funcional siguen pendientes.
 
 El campo `rol` es obligatorio, sin valor predeterminado, y admite `ADMINISTRADOR`, `RECEPCION` u `OPERADOR`. `create_user()` y `create_superuser()` exigen el argumento explícito `rol`; los valores vacíos o inválidos se rechazan antes de guardar. El guardado directo también valida el rol. En PostgreSQL ya se comprobaron `UNIQUE (username)`, `NOT NULL` de `rol` y la restricción `usuarios_usuario_rol_valido` para los tres roles, incluidos intentos mediante `update()` que omiten la validación de `save()`.
 
@@ -132,13 +134,53 @@ Con las variables completas, las comprobaciones sin acceso a la base son:
 
 ```bash
 python -m pip check
-python -m compileall -q manage.py config usuarios
+python -m compileall -q manage.py config usuarios oficinas tramites
 python manage.py check
-python manage.py test usuarios --verbosity 2
+python manage.py test usuarios config.tests oficinas.tests.CatalogosSinBaseTests --verbosity 2
 git diff --check
 ```
 
 `manage.py check` por sí solo no demuestra que exista conexión a PostgreSQL; esa conexión se comprobó separadamente con `SELECT 1`. Las ocho pruebas de usuarios existentes usan `SimpleTestCase`, prohíben consultas a la base e interceptan los guardados válidos: no crean cuentas ni una base de pruebas y no comprueban las restricciones del servidor PostgreSQL.
+
+### Pruebas de oficinas y trámites en PostgreSQL
+
+La suite ejecutada terminó con **37 pruebas satisfactorias: 19 con PostgreSQL y 18 sin base de datos**, sin errores ni fallos. Utilizó exclusivamente la base `test_atencion_catalogos_revision`, preparada previamente por el usuario, con `atencion_test` como usuario y propietario en `127.0.0.1:5432`. Se confirmó que ese usuario no tiene `SUPERUSER`, `CREATEDB` ni `CREATEROLE`. No se modificaron `atencion_ciudadana` ni los permisos de `atencion_app`. El [registro de validación de oficinas y trámites](docs/pruebas/002-oficinas-tramites-postgresql.md) detalla los casos y sus límites.
+
+Para preparar otro entorno por primera vez, ejecutar en una terminal administrativa; omitir la creación si ya existen, como en el entorno verificado:
+
+```bash
+sudo -u postgres psql -v ON_ERROR_STOP=1 -d postgres
+```
+
+Dentro de `psql`:
+
+```sql
+CREATE ROLE atencion_test WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE;
+\password atencion_test
+CREATE DATABASE test_atencion_catalogos_revision OWNER atencion_test;
+\q
+```
+
+`\password` solicita la contraseña de forma interactiva. Estos comandos no cambian `atencion_app` ni sus permisos. Si el usuario o la base ya existen, revisar su configuración antes de repetir su creación.
+
+Completar localmente las variables `TEST_POSTGRES_*` de `.env.example` en el `.env` existente, sin sustituir las variables del proyecto: `TEST_POSTGRES_DB=test_atencion_catalogos_revision`, `TEST_POSTGRES_USER=atencion_test`, `TEST_POSTGRES_HOST=127.0.0.1`, `TEST_POSTGRES_PORT=5432` y `TEST_POSTGRES_PASSWORD` con la contraseña introducida. No guardar secretos en Git. La configuración general de Django de `.env` también es necesaria.
+
+Después de esa preparación, desde la raíz del repositorio:
+
+```bash
+.venv/bin/python -B manage.py check --settings=config.settings_test
+.venv/bin/python -B manage.py test usuarios config.tests oficinas tramites --settings=config.settings_test --keepdb --parallel 1 --noinput --verbosity 2
+```
+
+`NAME` y `TEST.NAME` coinciden. La configuración rechaza cualquier otro nombre de base, una coincidencia con la base del proyecto, un usuario distinto de `atencion_test` y una contraseña de pruebas vacía; no tiene alternativa a las credenciales de la aplicación. `--keepdb` reutiliza y conserva la base preparada y `--parallel 1` evita crear bases adicionales. Los datos de esta base son exclusivos de las pruebas y el ejecutor puede limpiarlos. Si no está preparada o faltan permisos, las pruebas deben detenerse; no se concederá `CREATEDB` al usuario.
+
+Se mantiene `TEST.MIGRATE=False`: Django prepara las tablas desde los modelos en la base de pruebas, por lo que estos casos **no verifican archivos de migración** ni aplican migraciones a la base del proyecto. No generar ni aplicar las migraciones de oficinas y trámites durante esta etapa.
+
+`Oficina` y `Tramite` tienen identificador, nombre obligatorio de hasta 150 caracteres y estado `activo`; el trámite exige una oficina con relación protectora, sin borrado en cascada. Se verificaron la unicidad global de oficinas y la de trámites por oficina, incluyendo inactivos e ignorando mayúsculas y espacios exteriores, y el rechazo de nombres vacíos o sin contenido. La grafía del nombre almacenado se conserva. Desactivar o reactivar conserva el registro y no cambia automáticamente otros registros; no implementa todavía historial de actividad.
+
+La regresión de oficina fija intercaló, mediante dos conexiones reales, la creación de una PK después de que la comprobación de guardado no encontrara la fila. El guardado normal exigió una inserción y fue rechazado por PK duplicada sin sobrescribir la fila de la otra conexión. También pasaron los casos de `force_insert`, `force_update`, `update_fields`, `oficina_id`, instancias reconstruidas o diferidas y cambios de `activo`, comprobando los datos persistidos. Las comprobaciones de Django incluidas en la ejecución no detectaron problemas.
+
+Los bloqueos de borrado y de cambio de oficina cubren las operaciones públicas admitidas del ORM y sus variantes asíncronas; las operaciones masivas de escritura se restringen y `update()` solo admite un booleano literal para `activo`. SQL directo, APIs internas y deserializadores pueden omitir estas protecciones. No hay disparadores SQL aprobados ni protección frente a esas vías; `activo` tampoco sustituye el historial de actividad pendiente.
 
 ### Migraciones y validación en PostgreSQL
 
@@ -153,9 +195,9 @@ Después se ejecutaron con el mismo entorno virtual:
 .venv/bin/python manage.py makemigrations --check --dry-run
 ```
 
-Todas las comprobaciones fueron satisfactorias, sin migraciones ni cambios de modelos pendientes. Se confirmó el modelo activo `usuarios.Usuario` y la existencia de `usuarios_usuario`. Las pruebas de lectura, escritura, contraseñas mediante `check_password`, desactivación y restricciones se realizaron dentro de una transacción revertida, con bloques `atomic` internos para los errores de integridad esperados y captura fuera de esos bloques. No quedó ningún usuario ficticio ni se creó una cuenta permanente.
+Todas las comprobaciones fueron satisfactorias, sin migraciones ni cambios de modelos pendientes en esa etapa de usuarios. Se confirmó el modelo activo `usuarios.Usuario` y la existencia de `usuarios_usuario`. Las pruebas de lectura, escritura, contraseñas mediante `check_password`, desactivación y restricciones se realizaron dentro de una transacción revertida, con bloques `atomic` internos para los errores de integridad esperados y captura fuera de esos bloques. No quedó ningún usuario ficticio ni se creó una cuenta permanente.
 
-Fueron pruebas puntuales; no se añadió una suite automática de integración. La comprobación de `check_password` no valida el inicio de sesión ni la fortaleza de contraseñas. Siguen pendientes el acceso mediante pantallas, los permisos funcionales, las oficinas y las asignaciones. El arranque funcional sigue pendiente; no hay rutas de aplicación ni panel administrativo habilitado. Véase el [registro de casos y resultados](docs/pruebas/001-usuarios-postgresql.md).
+Fueron pruebas puntuales; en esa validación de usuarios no se añadió una suite automática de integración. La comprobación de `check_password` no valida el inicio de sesión ni la fortaleza de contraseñas. La etapa posterior de oficinas y trámites sí incorpora una suite con PostgreSQL, descrita arriba. Siguen pendientes las migraciones del proyecto para esos catálogos, las asignaciones, los folios, el historial de actividad, el acceso mediante pantallas y los permisos funcionales. El arranque funcional sigue pendiente; no hay rutas de aplicación ni panel administrativo habilitado. Véase el [registro de casos y resultados de usuarios](docs/pruebas/001-usuarios-postgresql.md).
 
 ## Usuarios
 
@@ -192,6 +234,8 @@ Las denegaciones, los cierres por ausencia, las pausas y los traslados se docume
 - [Requisitos](docs/requirements.md): requisitos funcionales y no funcionales de la versión 1.
 - [Flujos de usuario](docs/user-flow.md): recorridos de administrador, recepcionista y operador, incluidas las excepciones.
 - [Validación de usuarios en PostgreSQL](docs/pruebas/001-usuarios-postgresql.md): migraciones aplicadas, pruebas puntuales, restricciones y alcance de la comprobación.
+- [Diseño de oficinas, trámites y asignaciones](docs/decisiones/002-oficinas-tramites-y-asignaciones.md): estado de implementación de catálogos y diseño pendiente de asignaciones y protecciones por folios.
+- [Validación de oficinas y trámites en PostgreSQL](docs/pruebas/002-oficinas-tramites-postgresql.md): 37 pruebas satisfactorias en esta etapa y límites de las protecciones implementadas.
 
 ## Evolución prevista
 

@@ -36,6 +36,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "usuarios.apps.UsuariosConfig",
+    "oficinas.apps.OficinasConfig",
+    "tramites.apps.TramitesConfig",
 ]
 AUTH_USER_MODEL = "usuarios.Usuario"
 MIDDLEWARE = [

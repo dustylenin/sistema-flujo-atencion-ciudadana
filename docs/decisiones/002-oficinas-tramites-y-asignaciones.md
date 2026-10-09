@@ -2,33 +2,41 @@
 
 Fecha: 8 de octubre de 2026.
 
-Estado: propuesta revisada, pendiente de implementación.
+Estado: base de oficinas y trámites implementada y verificada en PostgreSQL de pruebas; migraciones del proyecto, asignaciones, folios y protecciones dependientes pendientes.
 
 ## Autoridad y alcance
 
 Los [acuerdos vigentes](../acuerdos-vigentes.md) son la autoridad de las reglas de negocio y prevalecen sobre este documento. La [decisión 001](001-usuarios-y-asignaciones.md) establece el usuario personalizado, la separación de roles funcionales y la relación muchos a muchos entre operadores y oficinas.
 
-Este documento registra la propuesta técnica revisada para representar esos acuerdos. La distribución entre aplicaciones, los campos, las restricciones y la organización de las validaciones son propuestas de implementación; no añaden reglas de negocio.
+Este documento registra el diseño técnico revisado para representar esos acuerdos y distingue la base de catálogos implementada de las partes todavía propuestas. La distribución entre aplicaciones, los campos, las restricciones y la organización de las validaciones no añaden reglas de negocio.
 
-Actualmente existe `usuarios.Usuario`, basado en `AbstractUser`, con su migración y [validación en PostgreSQL documentadas](../pruebas/001-usuarios-postgresql.md). Todavía no existen los modelos de oficinas, trámites, asignaciones ni folios. El guardado actual de `Usuario` valida el valor del rol, pero no implementa los bloqueos por asignaciones o folios.
+Actualmente existen `usuarios.Usuario`, basado en `AbstractUser`, con su migración y [validación en PostgreSQL documentadas](../pruebas/001-usuarios-postgresql.md), y los modelos `Oficina` y `Tramite`. Todavía no existen los modelos de asignaciones ni folios. El guardado actual de `Usuario` valida el valor del rol, pero no implementa los bloqueos por asignaciones o folios.
 
-## Aplicaciones y modelos propuestos
+## Etapa implementada y verificada
+
+La base de oficinas y trámites está registrada en `INSTALLED_APPS`: identificadores, nombres obligatorios, estado `activo` y relación obligatoria del trámite con una oficina mediante `PROTECT`. Incluye unicidad global de oficinas y por oficina de trámites sobre `Lower(Trim(nombre))`, incluyendo inactivos, y restricciones de contenido del nombre. El guardado valida nombre y estado, impide cambiar la oficina del trámite y evita sobrescribir una PK creada después de una consulta sin resultado. Se bloquea el borrado individual y por `QuerySet`; `bulk_create()` y `bulk_update()` no están admitidos y `update()` solo acepta un booleano literal para `activo`, con los mismos bloqueos en sus variantes asíncronas.
+
+La suite terminó con **37 pruebas satisfactorias: 19 con PostgreSQL y 18 sin base**, incluida una regresión con dos conexiones reales. Se utilizó exclusivamente `test_atencion_catalogos_revision` con `atencion_test`. `MIGRATE=False` preparó el esquema desde los modelos: se verificaron modelos y restricciones en esa base, **no archivos de migración**. Las migraciones de oficinas y trámites para la base del proyecto todavía no se han generado ni aplicado. Los casos y resultados están en el [registro de validación](../pruebas/002-oficinas-tramites-postgresql.md).
+
+Estas protecciones cubren las vías públicas admitidas de la aplicación; SQL directo, APIs internas y deserializadores pueden omitirlas. No hay disparadores SQL aprobados ni historial de actividad implementado. El booleano `activo` conserva el estado sin provocar cambios automáticos en otras entidades. Asignaciones, folios, pantallas y permisos funcionales siguen pendientes; las reglas que dependen de ellos no se presentan como implementadas.
+
+## Aplicaciones y modelos
 
 - `usuarios`, existente: cuentas, rol y estado de actividad.
-- `oficinas`, propuesta: catálogo de oficinas y asignaciones de operadores.
-- `tramites`, propuesta: catálogo de trámites y pertenencia a una oficina.
+- `oficinas`, existente: catálogo de oficinas implementado; asignaciones de operadores pendientes.
+- `tramites`, existente: catálogo de trámites y pertenencia a una oficina implementados.
 
-| Modelo | Campos mínimos propuestos | Relaciones |
+| Modelo | Campos mínimos | Relaciones y estado |
 | --- | --- | --- |
-| `Oficina` | `id` como clave primaria, `nombre` de texto, `activo` booleano. | Tiene varios trámites y varias asignaciones. |
-| `Tramite` | `id` como clave primaria, `nombre` de texto, `activo` booleano, `oficina` obligatoria. | Clave foránea a una sola `Oficina`. |
-| `AsignacionOperadorOficina` | `id` como clave primaria, `operador` obligatorio, `oficina` obligatoria, `activo` booleano. | Claves foráneas a `settings.AUTH_USER_MODEL` y a `Oficina`. |
+| `Oficina` | `id` como clave primaria, `nombre` de texto, `activo` booleano. | Implementado: varios trámites. Las asignaciones siguen propuestas. |
+| `Tramite` | `id` como clave primaria, `nombre` de texto, `activo` booleano, `oficina` obligatoria. | Implementado: clave foránea a una sola `Oficina`. |
+| `AsignacionOperadorOficina` | `id` como clave primaria, `operador` obligatorio, `oficina` obligatoria, `activo` booleano. | Propuesto, pendiente: claves foráneas a `settings.AUTH_USER_MODEL` y a `Oficina`. |
 
 `AsignacionOperadorOficina` representa la relación muchos a muchos: varias oficinas por operador y varios operadores por oficina. No se impondrá unicidad sobre el operador o la oficina individualmente ni un límite de un operador activo por oficina.
 
-## Restricciones de unicidad propuestas
+## Restricciones de unicidad
 
-Se proponen restricciones en PostgreSQL, expresadas mediante `UniqueConstraint` de Django:
+Las restricciones se expresan mediante `UniqueConstraint` de Django. Las de oficinas y trámites están implementadas y verificadas en la base exclusiva de pruebas; la de asignaciones sigue propuesta:
 
 - `Oficina`: unicidad global sobre `Lower(Trim(nombre))`.
 - `Tramite`: unicidad sobre la combinación de `oficina` y `Lower(Trim(nombre))`; el nombre puede repetirse en otra oficina.
@@ -36,7 +44,7 @@ Se proponen restricciones en PostgreSQL, expresadas mediante `UniqueConstraint` 
 
 Todas incluyen registros activos e inactivos, sin condición sobre `activo`. La pareja operador/oficina no se puede duplicar para sustituir una asignación desactivada: se reactiva el registro existente.
 
-La expresión de comparación de nombres representa únicamente la equivalencia aprobada entre mayúsculas y minúsculas y la eliminación de espacios exteriores para comparar. No propone cambios en el nombre almacenado ni reglas adicionales sobre acentos, espacios internos o edición de nombres. La implementación deberá verificar que las expresiones y la configuración de comparación de PostgreSQL reproduzcan los acuerdos.
+La expresión de comparación de nombres representa únicamente la equivalencia aprobada entre mayúsculas y minúsculas y la eliminación de espacios exteriores para comparar. No propone cambios en el nombre almacenado ni reglas adicionales sobre acentos, espacios internos o edición de nombres. Se verificaron en PostgreSQL las variantes de nombres de los casos registrados; no se extiende ese resultado a reglas de comparación no aprobadas.
 
 ## Conservación y ciclo de vida
 
@@ -71,7 +79,7 @@ La reasignación de folios abiertos de operadores desactivados sigue exclusivame
 
 ## Garantías de PostgreSQL y responsabilidad de la aplicación
 
-Una vez implementadas y aplicadas las restricciones propuestas, PostgreSQL garantizará la existencia de las entidades referenciadas mediante claves foráneas, la obligatoriedad mediante `NOT NULL` y las tres unicidades descritas. Estas restricciones también rechazarán datos incompatibles cuando una escritura omita las validaciones de la aplicación.
+Las restricciones de oficinas y trámites están definidas en los modelos y preparadas en la base exclusiva de pruebas: clave foránea, obligatoriedad, contenido del nombre y unicidades de los catálogos. Su aplicación en la base del proyecto sigue pendiente de generar, revisar y aplicar migraciones. La unicidad de la pareja operador/oficina todavía es una propuesta sin implementar. Una vez aplicadas las restricciones correspondientes, PostgreSQL rechazará datos incompatibles incluso si una escritura omite las validaciones de la aplicación.
 
 La aplicación deberá validar la autorización del actor, el rol y actividad del destinatario al crear o reactivar asignaciones, las transiciones de estado, la conservación del registro, la oficina inmutable del trámite y los bloqueos por folios. También deberá conservar el registro de actividad. Estas garantías no se obtienen únicamente con las claves foráneas y restricciones de unicidad propuestas.
 
@@ -93,9 +101,9 @@ Esta dependencia no modifica las reglas de desactivación de cuentas ni la posib
 
 ## Orden de implementación y verificaciones
 
-1. Implementar los catálogos de oficinas y trámites, sus relaciones y restricciones. Verificar unicidad global y por oficina, incluyendo inactivos y variantes de mayúsculas y espacios exteriores; conservación al desactivar y reactivar; rechazo de borrado físico y de cambio de oficina por las vías de escritura soportadas. Documentar los límites ante escrituras directas.
+1. Base de catálogos implementada y verificada en PostgreSQL de pruebas: unicidad global y por oficina, incluyendo inactivos y variantes de mayúsculas y espacios exteriores; conservación al desactivar y reactivar; rechazo de borrado físico y de cambio de oficina por las vías soportadas; límites ante escrituras directas documentados. Queda pendiente generar, revisar, verificar y aplicar las migraciones del proyecto antes de usar esos modelos en su base local.
 2. Implementar asignaciones y sus operaciones de creación y reactivación. Verificar varias oficinas por operador, varios operadores por oficina, rechazo de parejas duplicadas, condiciones de rol y actividad, reutilización del mismo registro y conservación de asignaciones históricas inactivas de cuentas que cambiaron de rol legítimamente. Mantener sin habilitar las operaciones dependientes de folios.
 3. Implementar los folios, su oficina, operador asignado, estado e historial, así como las operaciones acordadas necesarias para resolverlos. Verificar nuevos registros solo con oficina y trámite activos y la posibilidad de terminar pendientes en una oficina inactiva.
 4. Completar y verificar los bloqueos de retirada de asignaciones y cambio de rol. Probar folios asignados sin finalizar, folios finalizados, cola sin operador asignado, alcance por oficina frente al alcance de toda la cuenta y operaciones concurrentes. Habilitar esas operaciones únicamente después de comprobar sus protecciones y la conservación del historial.
 
-Estas verificaciones son trabajo futuro; este documento no afirma resultados ni añade una suite de pruebas. Su registro no implementa modelos, permisos, servicios o pantallas, ni genera o aplica migraciones.
+Las verificaciones de catálogos ya realizadas se detallan en el registro enlazado; las verificaciones de asignaciones, folios, permisos e historial siguen siendo trabajo futuro. Esta actualización documenta la etapa comprobada, sin cambiar los acuerdos ni implementar las partes pendientes, y no genera ni aplica migraciones.
