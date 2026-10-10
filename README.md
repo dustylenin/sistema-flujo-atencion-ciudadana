@@ -10,6 +10,8 @@ El sistema busca mantener un registro trazable desde la recepción hasta el resu
 
 Tras aplicar las migraciones de usuarios, las comprobaciones de Django fueron satisfactorias: `check` no detectó problemas, `showmigrations` mostró todas las migraciones aplicadas, `migrate --plan` no mostró operaciones pendientes y `makemigrations --check --dry-run` no detectó cambios de modelos en esa etapa. Las pruebas puntuales comprobaron la creación y recuperación de usuarios de los tres roles, la unicidad de `username`, las restricciones del rol y la conservación del registro al desactivar una cuenta. Todas las operaciones con usuarios ficticios se revirtieron: quedaron cero usuarios y no se creó ninguna cuenta permanente. Los resultados y el alcance están en el [registro de validación en PostgreSQL](docs/pruebas/001-usuarios-postgresql.md).
 
+El siguiente paso tiene un [diseño revisado de servicios de asignación y actividad](docs/decisiones/003-servicios-de-asignacion-y-actividad.md), con **implementación y pruebas pendientes**. Define creación y reactivación por un administrador funcional autenticado y activo, eventos durables guardados en la misma transacción, resultados explícitos y protecciones del ORM. Retirada y cambio desde `OPERADOR` permanecerán bloqueados hasta disponer de comprobaciones completas con folios reales. Los eventos propuestos no constituyen la auditoría completa del sistema y las 42 pruebas anteriores no validan este nuevo diseño.
+
 ## Tecnologías elegidas
 
 - Interfaz: HTML, CSS y JavaScript con plantillas de Django.
@@ -255,6 +257,7 @@ Las denegaciones, los cierres por ausencia, las pausas y los traslados se docume
 - [Flujos de usuario](docs/user-flow.md): recorridos de administrador, recepcionista y operador, incluidas las excepciones.
 - [Validación de usuarios en PostgreSQL](docs/pruebas/001-usuarios-postgresql.md): migraciones aplicadas, pruebas puntuales, restricciones y alcance de la comprobación.
 - [Diseño de oficinas, trámites y asignaciones](docs/decisiones/002-oficinas-tramites-y-asignaciones.md): estado de implementación de catálogos y diseño pendiente de asignaciones y protecciones por folios.
+- [Servicios de asignación y registro de actividad](docs/decisiones/003-servicios-de-asignacion-y-actividad.md): diseño revisado de creación/reactivación, autorización, eventos, bloqueos y pruebas todavía pendientes.
 - [Validación de oficinas y trámites en PostgreSQL](docs/pruebas/002-oficinas-tramites-postgresql.md): 37 pruebas satisfactorias en esta etapa y límites de las protecciones implementadas.
 - [Verificación de migraciones reales en PostgreSQL](docs/pruebas/003-migraciones-postgresql.md): 42 pruebas satisfactorias, 18 migraciones aplicadas y comprobaciones finales en la segunda base exclusiva de pruebas.
 - [Aplicación de migraciones de catálogos en PostgreSQL local](docs/pruebas/004-migraciones-catalogos-local.md): oficinas y trámites aplicados en `atencion_ciudadana`, 18 migraciones registradas e inspección de lectura satisfactoria.
