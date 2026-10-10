@@ -2,19 +2,19 @@
 
 Fecha: 10 de octubre de 2026.
 
-Estado: **diseño revisado; implementación y pruebas pendientes**.
+Estado: **creación/reactivación implementadas y revisadas en PostgreSQL de pruebas; aplicación de las dos migraciones nuevas en la base local y reglas definitivas por folios pendientes**.
 
 ## Autoridad y alcance
 
 Los [acuerdos vigentes](../acuerdos-vigentes.md) prevalecen sobre este diseño. Se reutilizan el modelo, la multiplicidad, las reglas de ciclo de vida y la dependencia de folios de la [decisión 002](002-oficinas-tramites-y-asignaciones.md). Este documento concreta creación y reactivación de asignaciones y sus eventos durables; no añade reglas funcionales.
 
-Todavía no existen estos modelos, servicios, eventos ni sus protecciones en el código. Las **42 pruebas anteriores** corresponden a usuarios, catálogos y configuración de migraciones, documentadas en el [registro 003 de pruebas](../pruebas/003-migraciones-postgresql.md); **no verifican este diseño**. La aplicación de las migraciones de catálogos a la base local se conserva en el [registro 004](../pruebas/004-migraciones-catalogos-local.md).
+Existen `AsignacionOperadorOficina`, `EventoAsignacion`, servicios de creación/reactivación y sus protecciones del ORM. El [registro 005 de pruebas](../pruebas/005-asignaciones-postgresql.md) documenta 74 pruebas satisfactorias antes del ajuste final de concurrencia y 3 pruebas afectadas satisfactorias después, sin repetir la suite completa. Las 20 migraciones están aplicadas únicamente en la base exclusiva de pruebas; las dos nuevas siguen pendientes en `atencion_ciudadana`. Las **42 pruebas anteriores** corresponden a usuarios, catálogos y configuración de migraciones, documentadas en el [registro 003 de pruebas](../pruebas/003-migraciones-postgresql.md); **no verifican este diseño**. La aplicación de las migraciones de catálogos a la base local se conserva en el [registro 004](../pruebas/004-migraciones-catalogos-local.md).
 
 Retirada de asignaciones y cambio desde `OPERADOR` a otro rol seguirán sin habilitarse hasta implementar y verificar las comprobaciones completas con folios reales. Pantallas, asignaciones de folios y auditoría general quedan fuera del alcance inmediato.
 
-## Modelos propuestos en oficinas
+## Modelos implementados en oficinas
 
-Ambos modelos se ubicarían en `oficinas/models.py`.
+Ambos modelos se ubican en `oficinas/models.py`.
 
 | Modelo | Campos y relaciones |
 | --- | --- |
@@ -23,7 +23,7 @@ Ambos modelos se ubicarían en `oficinas/models.py`.
 
 La asignación tiene `UniqueConstraint(operador, oficina)` sin condición sobre `activo`. Un operador puede tener varias oficinas y una oficina varios operadores; ninguno de los dos campos es único individualmente. La pareja de un registro existente es inmutable y su borrado público se rechaza. Reactivar reutiliza el mismo registro y su PK; no se crea una pareja duplicada para sustituir una asignación inactiva.
 
-El evento admite únicamente `CREACION` y `REACTIVACION`. `activo_anterior` permite `NULL` solo para creación; `activo_nuevo` es obligatorio. Se propone una restricción de coherencia entre operación y estados:
+El evento admite únicamente `CREACION` y `REACTIVACION`. `activo_anterior` permite `NULL` solo para creación; `activo_nuevo` es obligatorio. Está implementada una restricción de coherencia entre operación y estados, con `IS NOT NULL` explícito para el estado anterior de reactivación, evitando que un resultado SQL desconocido admita `NULL`:
 
 | Operación | Estado anterior | Estado nuevo |
 | --- | --- | --- |
@@ -36,7 +36,7 @@ Cada cambio efectivo inserta un evento nuevo, sin editar los anteriores. Las ref
 
 ## Servicios y autorización
 
-En `oficinas/services.py` se proponen estas firmas:
+En `oficinas/services.py` están implementadas estas firmas:
 
 ```python
 crear_asignacion(*, actor, operador_id, oficina_id) -> ResultadoAsignacion
@@ -49,7 +49,7 @@ Para crear o reactivar efectivamente, se comprueba bajo bloqueo que la cuenta de
 
 ## Resultados explícitos y operaciones sin cambios
 
-`ResultadoAsignacion` contendría `estado`, `asignacion_id` y `evento_id`, permitiendo identificadores ausentes cuando corresponda.
+`ResultadoAsignacion` contiene `estado`, `asignacion_id` y `evento_id`, permitiendo identificadores ausentes cuando corresponda.
 
 | Servicio y situación | Estado del resultado | Escrituras y evento |
 | --- | --- | --- |
@@ -63,7 +63,7 @@ Todos los resultados requieren autorización del actor. Los incumplimientos de a
 
 ## Transacción, bloqueos y concurrencia
 
-Cada servicio utiliza una sola `transaction.atomic()` y la misma conexión para autorización, lecturas de validación, asignación y evento. El orden común de bloqueos mediante `select_for_update()` será:
+Cada servicio utiliza una sola `transaction.atomic()` y la misma conexión para autorización, lecturas de validación, asignación y evento. El orden común implementado de bloqueos mediante `select_for_update()` es:
 
 1. Cuentas del actor y del operador, por PK ascendente y sin duplicados.
 2. Oficina.
@@ -77,21 +77,21 @@ Las operaciones relacionadas sobre rol o actividad de cuentas, estado de oficina
 
 ## Vías públicas de escritura y límites
 
-Para asignaciones y eventos se propone rechazar la persistencia directa mediante `save`, `create`, `update`, `get_or_create`, `update_or_create`, `bulk_create`, `bulk_update` y borrado individual o por queryset. Los métodos mixtos se rechazan aunque pudieran limitarse a devolver un registro existente; las lecturas usarán métodos de lectura.
+Para asignaciones y eventos se rechaza la persistencia directa mediante `save`, `create`, `update`, `get_or_create`, `update_or_create`, `bulk_create`, `bulk_update` y borrado individual o por queryset. Los métodos mixtos se rechazan aunque pudieran limitarse a devolver un registro existente; las lecturas usarán métodos de lectura.
 
-Se cubren también `asave`, `acreate`, `aupdate`, `aget_or_create`, `aupdate_or_create`, `abulk_create`, `abulk_update` y `adelete`. Managers por defecto, base e inversos compartirán las restricciones. No se heredará para asignaciones el permiso de los catálogos de ejecutar `update(activo=...)`, porque permitiría retirar o reactivar sin el servicio.
+Se cubren también `asave`, `acreate`, `aupdate`, `aget_or_create`, `aupdate_or_create`, `abulk_create`, `abulk_update` y `adelete`. Managers por defecto, base e inversos comparten las restricciones. No se hereda para asignaciones el permiso de los catálogos de ejecutar `update(activo=...)`, porque permitiría retirar o reactivar sin el servicio.
 
-Los servicios utilizarán primitivas privadas de persistencia, específicas para cada transición y ejecutadas después de autorizar y validar dentro de la transacción. No habrá parámetros públicos para omitir validaciones ni un contexto amplio que permita escrituras arbitrarias. Si posteriormente se ofrecen servicios asíncronos, envolverán la operación síncrona completa, conservando autorización, bloqueos y atomicidad.
+Los servicios utilizan primitivas privadas de persistencia, específicas para cada transición y ejecutadas después de autorizar y validar dentro de la transacción. No hay parámetros públicos para omitir validaciones ni un contexto amplio que permita escrituras arbitrarias. Si posteriormente se ofrecen servicios asíncronos, envolverán la operación síncrona completa, conservando autorización, bloqueos y atomicidad.
 
 Estas protecciones cubren las vías públicas admitidas del ORM. **SQL directo, deserialización y APIs internas pueden omitirlas**; las restricciones de base garantizan referencias, unicidad y coherencia de estados del evento, pero no la autorización ni que toda escritura tenga evento. No se proponen disparadores ni se atribuye una garantía completa frente a esas vías.
 
 ## Bloqueos provisionales y reglas definitivas
 
-La implementación inicial deberá rechazar la retirada, incluida cualquier escritura pública de `activo=False`, y el cambio efectivo desde `OPERADOR` hacia otro rol. La ausencia del modelo de folios no se tratará como ausencia comprobada de folios pendientes.
+La implementación inicial rechaza la retirada, incluida cualquier escritura pública de `activo=False`, y el cambio efectivo desde `OPERADOR` hacia otro rol. La ausencia del modelo de folios no se trata como ausencia comprobada de folios pendientes.
 
-Actualmente `Usuario.save()` solo valida que el rol pertenezca a los valores admitidos. La protección propuesta deberá consultar y bloquear la fila existente y comparar el rol persistido con el que realmente se escribiría, incluso para instancias reconstruidas o con PK explícita. Se respetará `update_fields`: guardar únicamente contraseña o actividad no constituye un cambio de rol.
+`Usuario.save()` valida el rol, consulta y bloquea la fila existente y compara el rol persistido con el que realmente se escribiría, incluso para instancias reconstruidas o con PK explícita. Respeta `update_fields`: guardar únicamente contraseña o actividad no constituye un cambio de rol. Cuando una PK explícita no existe, exige INSERT para impedir sobrescribir una fila creada concurrentemente; cuando existe, el guardado normal exige UPDATE para evitar una inserción de respaldo; `force_insert=True` sigue siendo una inserción sujeta a la PK única.
 
-El queryset de usuarios rechazará `update(rol=...)`, `bulk_update` del rol y las inserciones masivas que puedan sobrescribirlo por conflicto. `create`, `get_or_create`, `update_or_create`, `create_user` y `create_superuser` deberán conservar la comprobación de la fila existente mediante `save`; también se cubrirán sus variantes asíncronas, incluidas las heredadas del manager. Los managers base y por defecto no podrán abrir una vía alternativa. Este diseño no habilita una nueva gestión funcional de cuentas.
+El queryset de usuarios rechaza `update(rol=...)`, `bulk_update` del rol y las inserciones masivas que puedan sobrescribirlo por conflicto. `create`, `get_or_create`, `update_or_create`, `create_user` y `create_superuser` conservan la comprobación de la fila existente mediante `save`; también se cubren sus variantes asíncronas, incluidas las heredadas del manager. Los managers base y por defecto comparten estas restricciones. Este diseño no habilita una nueva gestión funcional de cuentas.
 
 | Operación | Bloqueo provisional | Regla definitiva pendiente de folios |
 | --- | --- | --- |
@@ -100,13 +100,13 @@ El queryset de usuarios rechazará `update(rol=...)`, `bulk_update` del rol y la
 
 Una asignación histórica inactiva puede referenciar una cuenta cuyo rol actual sea distinto de `OPERADOR`. No se impone un filtro permanente por rol que impida conservar o consultar ese historial. Reactivarla exige cumplir nuevamente los requisitos de la operación. Comprobar solo asignaciones activas no sustituirá la comprobación definitiva de folios.
 
-## Implementación y pruebas previstas
+## Implementación y pruebas verificadas
 
-El alcance mínimo futuro comprende los dos modelos, servicios de creación/reactivación, registro durable, autorización, restricciones de escritura y bloqueos provisionales. No incluye retirada funcional, cambio desde `OPERADOR`, folios ni pantallas.
+El alcance implementado comprende los dos modelos, servicios de creación/reactivación, registro durable, autorización, restricciones de escritura y bloqueos provisionales. No incluye retirada funcional, cambio desde `OPERADOR`, folios ni pantallas.
 
-Se prevén cambios en `oficinas/models.py`, nuevos `oficinas/managers.py` y `oficinas/services.py`, `usuarios/models.py`, `usuarios/managers.py`, sus pruebas y las migraciones correspondientes cuando se autorice implementar. Este documento no crea ninguno de esos archivos ni genera migraciones.
+La implementación comprende `oficinas/models.py`, `oficinas/managers.py`, `oficinas/services.py`, `usuarios/models.py`, `usuarios/managers.py`, `oficinas/test_asignaciones.py`, `usuarios/test_protecciones.py` y dos migraciones nuevas, sin reescribir las anteriores. La migración de oficinas crea los modelos y sus restricciones; la de usuarios configura los managers base y por defecto en el estado de migraciones, sin SQL de alteración de tablas.
 
-Las pruebas se ejecutarán en PostgreSQL exclusivo de pruebas, con migraciones reales y aislamiento existente. Deberán cubrir:
+Las pruebas se ejecutaron en PostgreSQL exclusivo de pruebas, con migraciones reales y aislamiento existente. Cubren:
 
 - Varias oficinas por operador y varios operadores por oficina; unicidad incluyendo parejas inactivas y referencias protegidas.
 - Autorización del actor autenticado, activo y administrador funcional, con relectura de estado actual; rechazo de permisos derivados únicamente de `is_staff` o `is_superuser`.
@@ -118,4 +118,4 @@ Las pruebas se ejecutarán en PostgreSQL exclusivo de pruebas, con migraciones r
 - Conservación y consulta de asignaciones históricas inactivas de cuentas con otro rol, sin presentarlas como reactivables mientras incumplan los requisitos.
 - Concurrencia real con conexiones independientes: creación simultánea de una pareja, reactivación simultánea con un solo evento efectivo y coordinación con cambios del estado del actor, operador y oficina.
 
-La reactivación partirá de un registro histórico inactivo preparado exclusivamente como fixture de pruebas, sin habilitar retirada ni simular folios. Las pruebas completas de los bloqueos definitivos deberán esperar a folios reales y al protocolo compartido. **Ninguna de estas pruebas se presenta como ejecutada o satisfactoria en esta etapa de diseño.**
+La reactivación parte de registros históricos inactivos preparados exclusivamente como fixtures de pruebas, sin habilitar retirada ni simular folios. La revisión reforzó creación y reactivación concurrentes con administradores distintos, conexiones independientes y verificación de espera real mediante `pg_blocking_pids`; la tercera prueba afectada verifica relectura del estado después de esperar bloqueos. Las tres pasaron. **La suite completa de 74 pruebas no se repitió después de ese ajuste.** Las pruebas completas de los bloqueos definitivos deberán esperar a folios reales y al protocolo compartido. Los resultados y comandos están en el [registro 005](../pruebas/005-asignaciones-postgresql.md); esta actualización no ejecuta pruebas ni modifica bases.

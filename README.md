@@ -6,11 +6,13 @@ El sistema busca mantener un registro trazable desde la recepción hasta el resu
 
 ## Estado del proyecto
 
-**Etapa actual: usuario personalizado y migraciones de oficinas y trámites aplicadas y verificadas en PostgreSQL local.** Este repositorio conserva la visión, los requisitos y los flujos de la versión 1 e incorpora la configuración base de Django y `Usuario(AbstractUser)`. La suite de migraciones reales terminó con 42 pruebas satisfactorias en `test_atencion_catalogos_migraciones`. Posteriormente se aplicaron `oficinas.0001_initial` y `tramites.0001_initial` en `atencion_ciudadana`, con `config.settings` y `atencion_app`: ya están aplicadas las 18 migraciones de `contenttypes`, `auth`, `sessions`, `usuarios`, `oficinas` y `tramites`, sin operaciones pendientes. Asignaciones, folios, pantallas, permisos funcionales, historial de actividad y protecciones dependientes siguen pendientes.
+**Etapa actual: creación y reactivación de asignaciones implementadas y revisadas en PostgreSQL de pruebas.** Se incorporaron `AsignacionOperadorOficina`, `EventoAsignacion` y servicios autorizados por administrador funcional, con eventos durables y transacción conjunta. En `test_atencion_catalogos_migraciones`, con `config.settings_test_migrations` y `atencion_test`, quedaron 20 migraciones reales aplicadas y sin operaciones pendientes. La suite completa pasó con **74 pruebas antes del ajuste final de concurrencia**; después se reforzó la sincronización y pasaron las **3 pruebas afectadas**, sin repetir la suite completa. El [registro de asignaciones](docs/pruebas/005-asignaciones-postgresql.md) distingue ambas verificaciones.
+
+Las migraciones de catálogos ya están aplicadas y verificadas en `atencion_ciudadana`, que conserva las 18 migraciones de la etapa anterior. **Las dos migraciones nuevas de asignaciones y opciones de Usuario siguen pendientes en esa base**; no se conectó ni modificó durante esta implementación o revisión. Folios, pantallas, gestión funcional de cuentas y auditoría global siguen pendientes.
 
 Tras aplicar las migraciones de usuarios, las comprobaciones de Django fueron satisfactorias: `check` no detectó problemas, `showmigrations` mostró todas las migraciones aplicadas, `migrate --plan` no mostró operaciones pendientes y `makemigrations --check --dry-run` no detectó cambios de modelos en esa etapa. Las pruebas puntuales comprobaron la creación y recuperación de usuarios de los tres roles, la unicidad de `username`, las restricciones del rol y la conservación del registro al desactivar una cuenta. Todas las operaciones con usuarios ficticios se revirtieron: quedaron cero usuarios y no se creó ninguna cuenta permanente. Los resultados y el alcance están en el [registro de validación en PostgreSQL](docs/pruebas/001-usuarios-postgresql.md).
 
-El siguiente paso tiene un [diseño revisado de servicios de asignación y actividad](docs/decisiones/003-servicios-de-asignacion-y-actividad.md), con **implementación y pruebas pendientes**. Define creación y reactivación por un administrador funcional autenticado y activo, eventos durables guardados en la misma transacción, resultados explícitos y protecciones del ORM. Retirada y cambio desde `OPERADOR` permanecerán bloqueados hasta disponer de comprobaciones completas con folios reales. Los eventos propuestos no constituyen la auditoría completa del sistema y las 42 pruebas anteriores no validan este nuevo diseño.
+La [decisión de servicios de asignación y actividad](docs/decisiones/003-servicios-de-asignacion-y-actividad.md) describe el alcance implementado: creación y reactivación por administrador funcional autenticado y activo, relectura de su estado en la base, resultados explícitos, bloqueos y protecciones del ORM. Retirada y cambio efectivo desde `OPERADOR` están bloqueados provisionalmente hasta verificar sus reglas completas con folios reales. Los eventos cubren únicamente creación y reactivación; no constituyen la auditoría completa del sistema. Las 42 pruebas de la etapa anterior se conservan como evidencia de usuarios, catálogos y configuración de migraciones.
 
 ## Tecnologías elegidas
 
@@ -24,8 +26,8 @@ El siguiente paso tiene un [diseño revisado de servicios de asignación y activ
 
 ```text
 config/          Configuración, rutas vacías y entradas ASGI/WSGI
-usuarios/        Usuario personalizado, manager y pruebas sin base de datos
-oficinas/        Catálogo de oficinas, protecciones compartidas y pruebas
+usuarios/        Usuario personalizado, protecciones de rol y pruebas
+oficinas/        Catálogo, asignaciones, eventos, servicios y pruebas
 tramites/        Catálogo de trámites con oficina fija y pruebas
 docs/            Documentación del producto conservada
 templates/       Carpeta reservada para plantillas; sin pantallas
@@ -38,7 +40,7 @@ requirements.txt Dependencias del entorno
 .gitignore       Excluye entorno virtual, secretos y archivos generados
 ```
 
-`AUTH_USER_MODEL` apunta a `usuarios.Usuario`, basado en `AbstractUser`, conforme a la [decisión aprobada de usuarios y asignaciones](docs/decisiones/001-usuarios-y-asignaciones.md). Conserva `username` como identificador de acceso y los campos heredados. Las asignaciones y la autorización funcional siguen pendientes.
+`AUTH_USER_MODEL` apunta a `usuarios.Usuario`, basado en `AbstractUser`, conforme a la [decisión aprobada de usuarios y asignaciones](docs/decisiones/001-usuarios-y-asignaciones.md). Conserva `username` como identificador de acceso y los campos heredados. La autorización funcional de creación/reactivación de asignaciones está implementada en servicios; las pantallas y los demás permisos funcionales siguen pendientes.
 
 El campo `rol` es obligatorio, sin valor predeterminado, y admite `ADMINISTRADOR`, `RECEPCION` u `OPERADOR`. `create_user()` y `create_superuser()` exigen el argumento explícito `rol`; los valores vacíos o inválidos se rechazan antes de guardar. El guardado directo también valida el rol. En PostgreSQL ya se comprobaron `UNIQUE (username)`, `NOT NULL` de `rol` y la restricción `usuarios_usuario_rol_valido` para los tres roles, incluidos intentos mediante `update()` que omiten la validación de `save()`.
 
@@ -138,7 +140,7 @@ Con las variables completas, las comprobaciones sin acceso a la base son:
 python -m pip check
 python -m compileall -q manage.py config usuarios oficinas tramites
 python manage.py check
-python manage.py test usuarios config.tests oficinas.tests.CatalogosSinBaseTests --verbosity 2
+python manage.py test usuarios.tests config.tests oficinas.tests.CatalogosSinBaseTests --verbosity 2
 git diff --check
 ```
 
@@ -211,7 +213,7 @@ Después se ejecutaron con el mismo entorno virtual:
 
 Todas las comprobaciones fueron satisfactorias, sin migraciones ni cambios de modelos pendientes en esa etapa de usuarios. Se confirmó el modelo activo `usuarios.Usuario` y la existencia de `usuarios_usuario`. Las pruebas de lectura, escritura, contraseñas mediante `check_password`, desactivación y restricciones se realizaron dentro de una transacción revertida, con bloques `atomic` internos para los errores de integridad esperados y captura fuera de esos bloques. No quedó ningún usuario ficticio ni se creó una cuenta permanente.
 
-Fueron pruebas puntuales; en esa validación de usuarios no se añadió una suite automática de integración. La comprobación de `check_password` no valida el inicio de sesión ni la fortaleza de contraseñas. Las etapas posteriores de oficinas y trámites incorporan una suite con PostgreSQL y verifican los archivos de migración mediante su aplicación real en la segunda base de pruebas, descrita arriba. Siguen pendientes las asignaciones, los folios, el historial de actividad, el acceso mediante pantallas, los permisos funcionales y las protecciones que dependen de esas partes. El arranque funcional sigue pendiente; no hay rutas de aplicación ni panel administrativo habilitado. Véase el [registro de casos y resultados de usuarios](docs/pruebas/001-usuarios-postgresql.md).
+Fueron pruebas puntuales; en esa validación de usuarios no se añadió una suite automática de integración. La comprobación de `check_password` no valida el inicio de sesión ni la fortaleza de contraseñas. Las etapas posteriores de oficinas y trámites incorporan una suite con PostgreSQL y verifican los archivos de migración mediante su aplicación real en la segunda base de pruebas, descrita arriba. La etapa posterior de asignaciones implementa creación/reactivación y sus eventos. Siguen pendientes los folios, la auditoría global, el acceso mediante pantallas, los demás permisos funcionales y las protecciones definitivas por folios. El arranque funcional sigue pendiente; no hay rutas de aplicación ni panel administrativo habilitado. Véase el [registro de casos y resultados de usuarios](docs/pruebas/001-usuarios-postgresql.md).
 
 El **10 de octubre de 2026** se aplicaron los catálogos a la base local mediante `config.settings`, después de confirmar por conexión real `atencion_ciudadana` con `atencion_app`, Git limpio, las 16 migraciones anteriores aplicadas y un plan con exactamente `oficinas.0001_initial` y `tramites.0001_initial`. Las comprobaciones previas de Django pasaron y no se detectaron cambios de modelos. Se ejecutó:
 
@@ -256,10 +258,11 @@ Las denegaciones, los cierres por ausencia, las pausas y los traslados se docume
 - [Requisitos](docs/requirements.md): requisitos funcionales y no funcionales de la versión 1.
 - [Flujos de usuario](docs/user-flow.md): recorridos de administrador, recepcionista y operador, incluidas las excepciones.
 - [Validación de usuarios en PostgreSQL](docs/pruebas/001-usuarios-postgresql.md): migraciones aplicadas, pruebas puntuales, restricciones y alcance de la comprobación.
-- [Diseño de oficinas, trámites y asignaciones](docs/decisiones/002-oficinas-tramites-y-asignaciones.md): estado de implementación de catálogos y diseño pendiente de asignaciones y protecciones por folios.
-- [Servicios de asignación y registro de actividad](docs/decisiones/003-servicios-de-asignacion-y-actividad.md): diseño revisado de creación/reactivación, autorización, eventos, bloqueos y pruebas todavía pendientes.
+- [Diseño de oficinas, trámites y asignaciones](docs/decisiones/002-oficinas-tramites-y-asignaciones.md): estado de catálogos y asignaciones implementados, con protecciones definitivas por folios pendientes.
+- [Servicios de asignación y registro de actividad](docs/decisiones/003-servicios-de-asignacion-y-actividad.md): creación/reactivación, autorización, eventos y bloqueos implementados y revisados; alcance y pendientes.
 - [Validación de oficinas y trámites en PostgreSQL](docs/pruebas/002-oficinas-tramites-postgresql.md): 37 pruebas satisfactorias en esta etapa y límites de las protecciones implementadas.
 - [Verificación de migraciones reales en PostgreSQL](docs/pruebas/003-migraciones-postgresql.md): 42 pruebas satisfactorias, 18 migraciones aplicadas y comprobaciones finales en la segunda base exclusiva de pruebas.
+- [Asignaciones en PostgreSQL](docs/pruebas/005-asignaciones-postgresql.md): 74 pruebas antes del ajuste final, 3 pruebas de concurrencia posteriores y 20 migraciones en pruebas; aplicación local pendiente.
 - [Aplicación de migraciones de catálogos en PostgreSQL local](docs/pruebas/004-migraciones-catalogos-local.md): oficinas y trámites aplicados en `atencion_ciudadana`, 18 migraciones registradas e inspección de lectura satisfactoria.
 
 ## Evolución prevista

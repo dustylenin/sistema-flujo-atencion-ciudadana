@@ -2,7 +2,7 @@
 
 Fecha: 8 de octubre de 2026.
 
-Estado actualizado al 10 de octubre de 2026: base de oficinas y trámites implementada, migraciones reales verificadas en pruebas y aplicadas y verificadas en `atencion_ciudadana`; asignaciones, folios, pantallas, permisos funcionales, historial de actividad y protecciones dependientes pendientes.
+Estado actualizado al 10 de octubre de 2026: base de oficinas y trámites implementada, migraciones reales verificadas en pruebas y aplicadas y verificadas en `atencion_ciudadana`; creación/reactivación de asignaciones y eventos implementados y revisados en pruebas. Las dos migraciones nuevas siguen pendientes en la base local; folios, pantallas, demás permisos funcionales, auditoría global y protecciones definitivas por folios pendientes.
 
 ## Autoridad y alcance
 
@@ -10,9 +10,9 @@ Los [acuerdos vigentes](../acuerdos-vigentes.md) son la autoridad de las reglas 
 
 Este documento registra el diseño técnico revisado para representar esos acuerdos y distingue la base de catálogos implementada de las partes todavía propuestas. La distribución entre aplicaciones, los campos, las restricciones y la organización de las validaciones no añaden reglas de negocio.
 
-La [decisión 003 — Servicios de asignación y registro de actividad](003-servicios-de-asignacion-y-actividad.md) concreta el diseño revisado de `AsignacionOperadorOficina` y `EventoAsignacion`, servicios de creación/reactivación, autorización, resultados, transacciones, bloqueos y protecciones del ORM. **Su implementación y pruebas están pendientes**; las 42 pruebas de catálogos y migraciones no verifican ese diseño y los eventos propuestos no constituyen la auditoría completa del sistema. Se conservan las reglas y dependencias de folios de este documento.
+La [decisión 003 — Servicios de asignación y registro de actividad](003-servicios-de-asignacion-y-actividad.md) concreta el diseño revisado de `AsignacionOperadorOficina` y `EventoAsignacion`, servicios de creación/reactivación, autorización, resultados, transacciones, bloqueos y protecciones del ORM. **El alcance de creación y reactivación está implementado y revisado en PostgreSQL de pruebas**, según el [registro 005](../pruebas/005-asignaciones-postgresql.md). Las 42 pruebas de catálogos y migraciones corresponden a la etapa anterior; los eventos implementados no constituyen la auditoría completa del sistema. Se conservan las reglas y dependencias de folios de este documento.
 
-Actualmente existen `usuarios.Usuario`, basado en `AbstractUser`, con su migración y [validación en PostgreSQL documentadas](../pruebas/001-usuarios-postgresql.md), y los modelos `Oficina` y `Tramite`. Todavía no existen los modelos de asignaciones ni folios. El guardado actual de `Usuario` valida el valor del rol, pero no implementa los bloqueos por asignaciones o folios.
+Actualmente existen `usuarios.Usuario`, basado en `AbstractUser`, con su migración y [validación en PostgreSQL documentadas](../pruebas/001-usuarios-postgresql.md), y los modelos `Oficina` y `Tramite`. También existen `AsignacionOperadorOficina` y `EventoAsignacion`, con servicios de creación/reactivación. Todavía no existen folios. `Usuario.save()` valida el rol y bloquea provisionalmente la salida efectiva de `OPERADOR`, respetando escrituras parciales; no implementa todavía las comprobaciones definitivas por asignaciones activas y folios.
 
 ## Etapa implementada y verificada
 
@@ -24,25 +24,25 @@ Las migraciones iniciales de oficinas y trámites se generaron y revisaron poste
 
 Después, el 10 de octubre de 2026, se aplicaron correctamente **`oficinas.0001_initial` y `tramites.0001_initial` en `atencion_ciudadana`**, usando `config.settings` y `atencion_app`. Las comprobaciones previas confirmaron las 16 migraciones anteriores aplicadas y exactamente esas dos pendientes. Después se confirmaron 18 migraciones aplicadas, un plan vacío y `check` sin incidencias. La inspección de solo lectura verificó ambas tablas, sus columnas, cinco restricciones y cinco índices; ambas tablas tenían cero filas. No hubo migraciones simuladas, pruebas sobre la base local, usuarios o datos de ejemplo ni cambios de permisos. El [registro de aplicación local](../pruebas/004-migraciones-catalogos-local.md) documenta esta ejecución; los registros anteriores permanecen intactos.
 
-Estas protecciones cubren las vías públicas admitidas de la aplicación; SQL directo, APIs internas y deserializadores pueden omitirlas. No hay disparadores SQL aprobados ni historial de actividad implementado. El booleano `activo` conserva el estado sin provocar cambios automáticos en otras entidades. Asignaciones, folios, pantallas y permisos funcionales siguen pendientes; las reglas que dependen de ellos no se presentan como implementadas.
+Estas protecciones cubren las vías públicas admitidas de la aplicación; SQL directo, APIs internas y deserializadores pueden omitirlas. No hay disparadores SQL aprobados. El registro durable implementado cubre únicamente creación/reactivación de asignaciones; el historial general de actividad sigue pendiente. El booleano `activo` conserva el estado sin provocar cambios automáticos en otras entidades. Creación y reactivación de asignaciones están implementadas; retirada, folios, pantallas y demás permisos funcionales siguen pendientes.
 
 ## Aplicaciones y modelos
 
 - `usuarios`, existente: cuentas, rol y estado de actividad.
-- `oficinas`, existente: catálogo de oficinas implementado; asignaciones de operadores pendientes.
+- `oficinas`, existente: catálogo de oficinas, asignaciones de operadores y eventos de creación/reactivación implementados.
 - `tramites`, existente: catálogo de trámites y pertenencia a una oficina implementados.
 
 | Modelo | Campos mínimos | Relaciones y estado |
 | --- | --- | --- |
-| `Oficina` | `id` como clave primaria, `nombre` de texto, `activo` booleano. | Implementado: varios trámites. Las asignaciones siguen propuestas. |
+| `Oficina` | `id` como clave primaria, `nombre` de texto, `activo` booleano. | Implementado: varios trámites y varias asignaciones de operadores. |
 | `Tramite` | `id` como clave primaria, `nombre` de texto, `activo` booleano, `oficina` obligatoria. | Implementado: clave foránea a una sola `Oficina`. |
-| `AsignacionOperadorOficina` | `id` como clave primaria, `operador` obligatorio, `oficina` obligatoria, `activo` booleano. | Propuesto, pendiente: claves foráneas a `settings.AUTH_USER_MODEL` y a `Oficina`. |
+| `AsignacionOperadorOficina` | `id` como clave primaria, `operador` obligatorio, `oficina` obligatoria, `activo` booleano. | Implementado: claves foráneas protegidas a `settings.AUTH_USER_MODEL` y a `Oficina`; pareja única e inmutable por las vías públicas del ORM. |
 
 `AsignacionOperadorOficina` representa la relación muchos a muchos: varias oficinas por operador y varios operadores por oficina. No se impondrá unicidad sobre el operador o la oficina individualmente ni un límite de un operador activo por oficina.
 
 ## Restricciones de unicidad
 
-Las restricciones se expresan mediante `UniqueConstraint` de Django. Las de oficinas y trámites están implementadas, verificadas en pruebas y aplicadas y verificadas en la base local; la de asignaciones sigue propuesta:
+Las restricciones se expresan mediante `UniqueConstraint` de Django. Las de oficinas y trámites están implementadas, verificadas en pruebas y aplicadas y verificadas en la base local; la de asignaciones está implementada y verificada en pruebas, pendiente de aplicar en la base local:
 
 - `Oficina`: unicidad global sobre `Lower(Trim(nombre))`.
 - `Tramite`: unicidad sobre la combinación de `oficina` y `Lower(Trim(nombre))`; el nombre puede repetirse en otra oficina.
@@ -60,7 +60,7 @@ La expresión de comparación de nombres representa únicamente la equivalencia 
 - La oficina de un trámite queda fija desde su creación. Si se ofrece en otra oficina, se crea otro registro asociado a ella; el anterior se desactiva cuando deje de ofrecerse en su oficina original, conservando su historial.
 - Retirar una oficina a un operador desactiva su asignación, sin eliminarla. Su reactivación utiliza el mismo registro y conserva el historial de las atenciones anteriores.
 
-Se propone conservar las relaciones sin borrados en cascada. El registro de actividad deberá recoger los cambios y sus responsables conforme a los acuerdos; el campo `activo` por sí solo no constituye ese historial.
+Las relaciones implementadas usan `PROTECT`, sin borrados en cascada. `EventoAsignacion` conserva actor, fecha y estados de creación/reactivación. El registro general de actividad deberá cubrir las demás acciones conforme a los acuerdos; el campo `activo` por sí solo no constituye ese historial.
 
 No se derivan efectos automáticos sobre las asignaciones al desactivar o reactivar cuentas u oficinas. Tampoco se propone finalización o reasignación automática de folios.
 
@@ -85,11 +85,11 @@ La reasignación de folios abiertos de operadores desactivados sigue exclusivame
 
 ## Garantías de PostgreSQL y responsabilidad de la aplicación
 
-Las restricciones de oficinas y trámites están definidas en los modelos, verificadas mediante migraciones reales en la segunda base exclusiva de pruebas y aplicadas y verificadas en `atencion_ciudadana`: clave foránea, obligatoriedad, contenido del nombre y unicidades de los catálogos. PostgreSQL dispone ya de esas restricciones en la base local y rechaza datos incompatibles aunque una escritura omita las validaciones de la aplicación. La unicidad de la pareja operador/oficina todavía es una propuesta sin implementar.
+Las restricciones de oficinas y trámites están definidas en los modelos, verificadas mediante migraciones reales en la segunda base exclusiva de pruebas y aplicadas y verificadas en `atencion_ciudadana`: clave foránea, obligatoriedad, contenido del nombre y unicidades de los catálogos. PostgreSQL dispone ya de esas restricciones en la base local y rechaza datos incompatibles aunque una escritura omita las validaciones de la aplicación. La unicidad de la pareja operador/oficina y la coherencia de estados de eventos están implementadas y verificadas en la base exclusiva de pruebas; sus migraciones siguen pendientes en `atencion_ciudadana`.
 
-La aplicación deberá validar la autorización del actor, el rol y actividad del destinatario al crear o reactivar asignaciones, las transiciones de estado, la conservación del registro, la oficina inmutable del trámite y los bloqueos por folios. También deberá conservar el registro de actividad. Estas garantías no se obtienen únicamente con las claves foráneas y restricciones de unicidad propuestas.
+Los servicios implementados validan la autorización actual del actor, el rol y actividad del destinatario y la actividad de la oficina al crear o reactivar, conservando asignación y evento en una transacción. Las vías públicas del ORM protegen el historial y la pareja inmutable. La oficina fija del trámite conserva sus protecciones anteriores. Los bloqueos definitivos por folios y el registro global de actividad siguen pendientes. Estas garantías no se obtienen únicamente con las claves foráneas y restricciones de unicidad propuestas.
 
-Se propone centralizar las operaciones en servicios transaccionales, ejecutar las validaciones explícitamente y coordinar bloqueos de usuario, oficina y asignación entre las operaciones concurrentes relacionadas. Las futuras operaciones de asignación de folios y cambio de estado deberán participar en el mismo protocolo para evitar carreras entre comprobación y escritura.
+Creación y reactivación están centralizadas en servicios transaccionales, con validaciones explícitas y bloqueos de cuentas por PK ascendente, oficina y asignación existente. Las futuras operaciones de asignación de folios y cambio de estado deberán participar en el mismo protocolo para evitar carreras entre comprobación y escritura.
 
 `clean()` aislado no protege todas las escrituras: `save()` no ejecuta automáticamente `full_clean()`, y `update()`, `bulk_create()` o SQL directo pueden omitir las validaciones del modelo y los servicios. Un `CHECK` ordinario no garantiza condiciones sobre el rol o estado de otras tablas ni sobre los folios relacionados.
 
@@ -99,7 +99,7 @@ Los disparadores SQL no forman parte de una decisión aprobada en esta propuesta
 
 ## Dependencia pendiente de folios
 
-Los bloqueos al desactivar asignaciones y al cambiar una cuenta de `OPERADOR` a otro rol están acordados, pero su implementación y verificación siguen pendientes porque los folios todavía no existen en el código.
+Las reglas definitivas al desactivar asignaciones y al cambiar una cuenta de `OPERADOR` a otro rol están acordadas, pero su implementación y verificación siguen pendientes porque los folios todavía no existen en el código. Mientras tanto, ambas operaciones están bloqueadas provisionalmente por las vías públicas admitidas del ORM, incluso si no hay asignaciones activas.
 
 **No se deben habilitar las operaciones que dependan de esos bloqueos hasta implementar y verificar las protecciones con folios reales.** No se sustituirán por consultas ficticias ni por comprobaciones que siempre indiquen ausencia de folios abiertos. Comprobar solo asignaciones activas no completa la protección del cambio de rol.
 
@@ -108,8 +108,8 @@ Esta dependencia no modifica las reglas de desactivación de cuentas ni la posib
 ## Orden de implementación y verificaciones
 
 1. Base de catálogos implementada y verificada en PostgreSQL de pruebas: unicidad global y por oficina, incluyendo inactivos y variantes de mayúsculas y espacios exteriores; conservación al desactivar y reactivar; rechazo de borrado físico y de cambio de oficina por las vías soportadas; límites ante escrituras directas documentados. Las migraciones iniciales ya se generaron, revisaron y verificaron mediante aplicación real en la segunda base de pruebas; también se aplicaron en `atencion_ciudadana`, con inspección de lectura satisfactoria del esquema y ambas tablas vacías. Esto no implementa pantallas ni las reglas dependientes de asignaciones y folios.
-2. Implementar asignaciones y sus operaciones de creación y reactivación conforme al [diseño revisado de servicios y actividad](003-servicios-de-asignacion-y-actividad.md), todavía sin implementar ni probar. Verificar varias oficinas por operador, varios operadores por oficina, rechazo de parejas duplicadas, condiciones de rol y actividad, reutilización del mismo registro y conservación de asignaciones históricas inactivas de cuentas que cambiaron de rol legítimamente. Añadir las pruebas previstas de autorización, eventos durables, concurrencia real y rollback conjunto. Mantener bloqueadas retirada y cambio desde `OPERADOR` hasta implementar las comprobaciones completas con folios reales.
+2. Creación y reactivación de asignaciones implementadas y revisadas conforme a la [decisión 003](003-servicios-de-asignacion-y-actividad.md). La suite completa pasó con 74 pruebas antes del ajuste final de sincronización; las 3 pruebas de concurrencia afectadas pasaron después, sin repetir la suite completa. Se verificaron multiplicidad, unicidad, requisitos actuales, reutilización de PK, historial, autorización, rollback y barreras de escritura. Hay 20 migraciones aplicadas en pruebas y plan vacío, sin datos residuales. `oficinas.0002_asignacionoperadoroficina_eventoasignacion_and_more` y `usuarios.0002_alter_usuario_options` siguen pendientes en la base local. Mantener bloqueadas retirada y salida de `OPERADOR` hasta verificar folios reales.
 3. Implementar los folios, su oficina, operador asignado, estado e historial, así como las operaciones acordadas necesarias para resolverlos. Verificar nuevos registros solo con oficina y trámite activos y la posibilidad de terminar pendientes en una oficina inactiva.
 4. Completar y verificar los bloqueos de retirada de asignaciones y cambio de rol. Probar folios asignados sin finalizar, folios finalizados, cola sin operador asignado, alcance por oficina frente al alcance de toda la cuenta y operaciones concurrentes. Habilitar esas operaciones únicamente después de comprobar sus protecciones y la conservación del historial.
 
-Las verificaciones de catálogos se detallan en los tres registros enlazados, distinguiendo la etapa con `MIGRATE=False`, la aplicación de migraciones reales en pruebas y la aplicación e inspección de lectura en la base local; las verificaciones de asignaciones, folios, pantallas, permisos e historial siguen siendo trabajo futuro. Esta actualización documenta ejecuciones ya completadas, sin repetirlas, cambiar los acuerdos ni implementar las partes pendientes, y no genera ni aplica migraciones.
+Las evidencias anteriores se conservan intactas, distinguiendo `MIGRATE=False`, migraciones reales en pruebas y aplicación local de catálogos. El [registro 005](../pruebas/005-asignaciones-postgresql.md) documenta implementación y revisión de asignaciones, incluyendo el ajuste posterior de concurrencia y sus límites. Folios, pantallas, demás permisos y auditoría global siguen pendientes. Esta actualización documental no ejecuta pruebas ni modifica bases.
