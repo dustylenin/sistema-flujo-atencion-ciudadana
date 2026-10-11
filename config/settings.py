@@ -30,6 +30,7 @@ ALLOWED_HOSTS = [
 # Infraestructura de Django y base del usuario aprobado.
 # La generación y ejecución de migraciones siguen pendientes.
 INSTALLED_APPS = [
+    "folios.apps.FoliosConfig",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",

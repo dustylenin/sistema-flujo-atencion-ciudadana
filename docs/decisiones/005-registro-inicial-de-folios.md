@@ -2,7 +2,7 @@
 
 Fecha de revisión: **10 de octubre de 2026**.
 
-Estado: **diseño revisado; implementación y pruebas pendientes**.
+Estado: **registro inicial implementado y revisado en PostgreSQL de pruebas; aplicación local de la migración pendiente**.
 
 ## Autoridad y alcance
 
@@ -10,11 +10,11 @@ Los [acuerdos vigentes](../acuerdos-vigentes.md), apartados «Recepción y regis
 
 Se reutilizan las referencias y conservación de registros de la [decisión 002](002-oficinas-tramites-y-asignaciones.md), y las transacciones, bloqueos y barreras de escritura de la [decisión 003](003-servicios-de-asignacion-y-actividad.md). Conforme a la [decisión 004](004-cola-y-responsabilidad-de-folios.md), registrar no asigna operador: la responsabilidad comienza al llamar, y el inicio de atención es un momento posterior.
 
-Los tipos, nombres de campos y representación interna siguientes son propuestas técnicas. La aplicación `folios`, sus modelos y servicios todavía no existen. Las pruebas anteriores de usuarios, catálogos y asignaciones no verifican este diseño.
+Los tipos, nombres de campos y representación interna siguientes son decisiones técnicas implementadas en `folios`. El [registro 007 de pruebas](../pruebas/007-registro-inicial-folios-postgresql.md) documenta la suite completa de **102 pruebas, incluidas 28 de folios, antes de la corrección del descriptor inverso**, y las **3 pruebas afectadas satisfactorias después**. La regresión falló antes de corregir y pasó después; no se repitió la suite completa ni se suman ambos conteos. En pruebas quedaron 21 migraciones aplicadas y sin pendientes, con 2 tablas nuevas, 18 columnas, 11 restricciones y 9 índices, sin datos residuales. `folios.0001_initial` sigue pendiente en `atencion_ciudadana`; esa base no se conectó en esta etapa. Las evidencias anteriores se conservan y no se atribuyen por sí solas a los folios.
 
 ## Folio
 
-Modelo propuesto en `folios/models.py`:
+Modelo implementado en `folios/models.py`:
 
 | Campo | Tipo y obligatoriedad | Valor inicial y procedencia |
 | --- | --- | --- |
@@ -29,9 +29,9 @@ Modelo propuesto en `folios/models.py`:
 | `estado` | `CharField(max_length=12)`, obligatorio, valor predeterminado `EN_ESPERA` | `EN_ESPERA`, mostrado como «En espera». |
 | `operador_responsable` | FK a `AUTH_USER_MODEL`, `on_delete=PROTECT`, `null=True`, `blank=True`, valor predeterminado `None` | NULL al registrar. |
 
-Las dos relaciones de usuario tendrán nombres inversos distintos. No se crea un registro maestro de ciudadano ni se reutilizan sus datos automáticamente. Nombre, correo y teléfono no son únicos: cada registro crea una atención independiente.
+Las dos relaciones de usuario tienen nombres inversos distintos. No se crea un registro maestro de ciudadano ni se reutilizan sus datos automáticamente. Nombre, correo y teléfono no son únicos: cada registro crea una atención independiente.
 
-Restricciones propuestas:
+Restricciones implementadas:
 
 - Clave primaria UUID, referencias existentes y NOT NULL en los campos obligatorios.
 - `CHECK` de nombre con contenido, además de su validación en el servicio.
@@ -43,7 +43,7 @@ El UUID no define el formato visible del folio, consecutivos ni reinicios. La co
 
 ## EventoFolio
 
-Modelo propuesto en `folios/models.py`, como registro durable de la creación:
+Modelo implementado en `folios/models.py`, como registro durable de la creación:
 
 | Campo | Tipo y obligatoriedad | Valor en CREACION |
 | --- | --- | --- |
@@ -58,13 +58,13 @@ Modelo propuesto en `folios/models.py`, como registro durable de la creación:
 
 El servidor construye y valida la estructura de `datos_iniciales`; no recibe un JSON arbitrario del cliente. La llegada se representa en formato ISO con zona horaria. Esta copia conserva evidencia inicial para futuras correcciones y traslados, sin implementar esas acciones ahora.
 
-Un `CHECK` exigirá conjuntamente operación `CREACION`, estado anterior `IS NULL` y estado nuevo `EN_ESPERA`. Operación y estado nuevo serán NOT NULL para evitar aceptación accidental de NULL por la lógica de SQL. Una `UniqueConstraint` condicional por folio para `CREACION` impedirá dos eventos de creación, permitiendo incorporar otros eventos posteriormente.
+Un `CHECK` exige conjuntamente operación `CREACION`, estado anterior `IS NULL` y estado nuevo `EN_ESPERA`. Operación y estado nuevo son NOT NULL para evitar aceptación accidental de NULL por la lógica de SQL. Una `UniqueConstraint` condicional por folio para `CREACION` impide dos eventos de creación, permitiendo incorporar otros eventos posteriormente.
 
 Los índices necesarios para esta entrega son los de claves primarias y foráneas y el índice de la unicidad condicional. Los índices de selección de cola se justificarán en la entrega del llamado. No se permite editar ni borrar públicamente eventos o folios. **EventoFolio no constituye la auditoría completa del sistema.**
 
 ## Servicio registrar_folio
 
-Firma propuesta en `folios/services.py`:
+Firma del servicio implementado en `folios/services.py`:
 
 ```python
 registrar_folio(
@@ -78,7 +78,7 @@ registrar_folio(
 ) -> ResultadoRegistroFolio
 ```
 
-El resultado será inmutable y contendrá `folio_id` y `evento_id`, devueltos solo después de guardar ambos. No se propone deduplicación por datos del ciudadano.
+El resultado es inmutable y contiene `folio_id` y `evento_id`, devueltos solo después de guardar ambos. No se realiza deduplicación por datos del ciudadano.
 
 El actor procede del contexto autenticado del servidor y debe ser una cuenta persistida de la misma base. Dentro de la transacción se bloquea y relee su fila: debe existir, tener rol `RECEPCION` y estar activa. No se confía en el rol o actividad de una instancia antigua. `is_staff` e `is_superuser` no conceden autorización funcional.
 
@@ -88,7 +88,7 @@ UUID, llegada original, responsable del registro, estado y operador vacío son e
 
 ## Transacción y orden de bloqueos
 
-Una sola `transaction.atomic()` y el mismo alias de escritura cubren autorización, validaciones e inserciones. El orden será:
+Una sola `transaction.atomic()` y el mismo alias de escritura cubren autorización, validaciones e inserciones. El orden implementado es:
 
 1. Cuenta de Recepción.
 2. Oficina.
@@ -102,13 +102,15 @@ Los bloqueos serializan el registro respecto de cambios concurrentes de rol o ac
 
 ## Barreras de escritura y límites
 
-Los modelos rechazarán `save`, `create`, `update`, `get_or_create`, `update_or_create`, `bulk_create`, `bulk_update` y borrado individual o por queryset. Se protegerán sus variantes asíncronas, managers por defecto, base e inversos y métodos relacionados como `add`, `set` o `clear` cuando correspondan. Las consultas usarán vías de lectura.
+Los modelos rechazan `save`, `create`, `update`, `get_or_create`, `update_or_create`, `bulk_create`, `bulk_update` y borrado individual o por queryset. Se protegen sus variantes asíncronas, managers por defecto, base e inversos y métodos relacionados como `add`, `set`, `remove` o `clear`. Las consultas usan vías de lectura.
 
-La persistencia privada será específica para crear el folio y su evento dentro del servicio autorizado. No habrá parámetros públicos de omisión ni contextos generales que permitan escrituras arbitrarias. El registro y los eventos se conservarán, sin borrado funcional.
+La revisión detectó que Django 5.2.17 reconstruye el manager inverso al seleccionar `relacion(manager="objects")`, perdiendo las prohibiciones personalizadas de operaciones relacionadas. Las escrituras efectivas seguían rechazadas por otras capas, pero algunas llamadas sin filas afectadas se aceptaban. El descriptor corregido conserva las barreras también al seleccionar nuevamente el manager, con regresión de lecturas, selección repetida, `db_manager` y variantes asíncronas.
+
+La persistencia privada es específica para crear el folio y su evento dentro del servicio autorizado. Ambos guardados fuerzan inserción, evitando sobrescribir registros existentes. No hay parámetros públicos de omisión ni contextos generales que permitan escrituras arbitrarias. El registro y los eventos se conservan, sin borrado funcional.
 
 Estas barreras cubren las vías públicas admitidas del ORM. SQL directo, deserializadores y APIs internas pueden eludirlas. Las restricciones de base garantizan referencias, unicidad y estados permitidos, pero no autorización, coherencia entre tablas ni que toda inserción de folio tenga evento. La unicidad garantiza como máximo un evento CREACION; el servicio y su transacción garantizan la pareja de registros al registrar.
 
-## Pruebas previstas y archivos
+## Pruebas y archivos implementados
 
 - Registro válido, opcionales ausentes, nombre vacío o compuesto solo por espacios y correo inválido.
 - Autorización con estado actualizado en la base, incluyendo instancias antiguas, cuenta inactiva, rol incorrecto e independencia de `is_staff`/`is_superuser`.
@@ -119,9 +121,9 @@ Estas barreras cubren las vías públicas admitidas del ORM. SQL directo, deseri
 - Rechazo de escritura y borrado por las vías síncronas, asíncronas y relacionadas previstas.
 - Concurrencia real frente a cambios de rol o desactivación de cuenta, oficina y trámite: conexiones independientes, sincronización explícita y comprobación de espera mediante `pg_blocking_pids`, siguiendo las pruebas existentes.
 
-La implementación añadiría `folios/__init__.py`, `apps.py`, `models.py`, `managers.py`, `services.py`, `tests.py`, `migrations/__init__.py` y `migrations/0001_initial.py`, y registraría la aplicación en `config/settings.py`. No requiere modificar modelos o servicios existentes.
+La implementación añade `folios/__init__.py`, `apps.py`, `models.py`, `managers.py`, `services.py`, `tests.py`, `migrations/__init__.py` y `migrations/0001_initial.py`, y registra la aplicación en `config/settings.py`. No modifica modelos o servicios existentes ni reescribe migraciones anteriores.
 
-Las pruebas usarán exclusivamente `config.settings_test_migrations`, conservarán las barreras de aislamiento existentes y ampliarán la suite con `folios`. **Estas pruebas están previstas, no ejecutadas.** No se atribuyen resultados anteriores a los modelos o servicios propuestos.
+Las pruebas ejecutadas usaron exclusivamente `config.settings_test_migrations`, conservaron las barreras de aislamiento existentes y ampliaron la suite con `folios`. La suite anterior comprobó concurrencia real en ambos órdenes entre registro y desactivación, con conexiones independientes y espera de bloqueo verificada. Después de corregir el descriptor se ejecutaron únicamente las tres pruebas afectadas; no se repitieron la suite completa ni las pruebas de concurrencia. `check`, correspondencia modelos/migraciones y formato fueron satisfactorios. Los comandos y límites están en el registro 007; este documento no supone una ejecución adicional.
 
 ## Pendientes
 
