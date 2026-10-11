@@ -2,9 +2,9 @@
 
 Fecha: **11 de octubre de 2026**.
 
-Estado: **primera entrega implementada y revisada en PostgreSQL de pruebas; aplicación local de `folios.0002` pendiente**.
+Estado: **primera entrega implementada, revisada en PostgreSQL de pruebas y con `folios.0002` aplicada y verificada localmente**.
 
-El diseño revisado se conserva como referencia de los contratos y propuestas técnicas. La [evidencia de implementación y pruebas](../pruebas/009-pausas-disponibilidad-postgresql.md) registra la validación posterior del 11 de octubre de 2026 y sus límites, sin atribuirle las evidencias de etapas anteriores.
+El diseño revisado se conserva como referencia de los contratos y propuestas técnicas. La [evidencia de implementación y pruebas](../pruebas/009-pausas-disponibilidad-postgresql.md) registra la validación posterior del 11 de octubre de 2026 y sus límites, sin atribuirle las evidencias de etapas anteriores. La [aplicación local de la migración](../pruebas/010-migracion-pausas-disponibilidad-local.md) registra por separado su ejecución e inspección posterior en `atencion_ciudadana`.
 
 ## Autoridad y alcance
 
@@ -237,7 +237,7 @@ El [registro 009](../pruebas/009-pausas-disponibilidad-postgresql.md) conserva c
 
 La inspección verificó 3 tablas nuevas, 22 columnas, 19 restricciones y 15 índices; quedaron **22 migraciones aplicadas en pruebas, ninguna pendiente**, y cero datos residuales de aplicación. Se corrigió una comparación del auxiliar dependiente del orden de columnas; no hubo diferencias de esquema. La revisión crítica posterior no encontró defectos, no modificó archivos ni ejecutó nuevas pruebas.
 
-**La aplicación local de `folios.0002` en `atencion_ciudadana` sigue pendiente.** Los casos reales de Ocupado y contexto desde Llamado se verificarán con la segunda entrega; En atención y notas se verificarán cuando se implementen. Los permisos ampliados y demás decisiones funcionales pendientes no se resolvieron durante la implementación.
+**`folios.0002` está aplicada y verificada localmente en `atencion_ciudadana`.** El [registro 010](../pruebas/010-migracion-pausas-disponibilidad-local.md) documenta la ejecución del 11 de octubre de 2026 con `config.settings`, conexión real `atencion_ciudadana / atencion_app` y Git limpio en `04659c8`. Se pasó de 21 migraciones aplicadas, con únicamente `folios.0002` pendiente, a **22 aplicadas y ninguna pendiente**, después de revisar el plan y SQL. `check` fue satisfactorio antes y después; `makemigrations --check --dry-run` no detectó diferencias. La inspección de solo lectura confirmó 3 tablas nuevas, 22 columnas, 19 restricciones y 15 índices, tipos, nulabilidad y referencias coincidentes, índices válidos, restricciones validadas y cero registros en las tres tablas. Folio y EventoFolio conservaron exactamente el esquema capturado antes. No se ejecutaron pruebas en la base normal ni se crearon datos de ejemplo. El registro 009 conserva intacto su estado histórico previo a esta aplicación. Los casos reales de Ocupado y contexto desde Llamado se verificarán con la segunda entrega; En atención y notas se verificarán cuando se implementen. Los permisos ampliados y demás decisiones funcionales pendientes no se resolvieron durante la implementación.
 
 ## Pendientes y segunda entrega
 
