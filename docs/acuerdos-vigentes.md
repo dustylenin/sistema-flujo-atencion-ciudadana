@@ -1,6 +1,6 @@
 # Sistema de Flujo de Atención Ciudadana
 
-Reglas vigentes tras la revisión de los prototipos. Actualización: 4 de octubre de 2026.
+Reglas vigentes tras la revisión de los prototipos. Actualización: 10 de octubre de 2026.
 
 Este documento reúne las decisiones aprobadas para orientar la programación. Las revisiones realizadas corresponden a los prototipos visuales; la aplicación aún no está implementada.
 
@@ -53,10 +53,14 @@ Un trámite desactivado deja de estar disponible para nuevos registros. El admin
 
 El recorrido normal es: **En espera → Llamado → En atención → Finalizado**.
 
+La cola conjunta reúne los folios **En espera** de todas las oficinas donde el operador tiene asignación activa. “Llamar al siguiente” selecciona la **llegada original más antigua entre esas oficinas**, sin que el operador seleccione una oficina desde su panel. Desactivar una oficina no excluye sus folios pendientes de esa cola ni impide atenderlos, mientras el operador conserve la asignación activa; sigue impidiendo nuevos registros conforme al acuerdo existente.
+
 1. Recepción registra el folio.
-2. El operador llama al ciudadano con la llegada más antigua de la cola correspondiente.
-3. Cuando el ciudadano se presenta, el operador pulsa Iniciar atención.
+2. El operador llama al ciudadano con la llegada original más antigua de su cola conjunta. El folio pasa a Llamado y queda reservado y asignado al operador que realizó el llamado.
+3. Cuando el ciudadano se presenta, ese operador pulsa Iniciar atención. El folio pasa a En atención y se registra la fecha y hora de inicio.
 4. El operador registra una nota y confirma la finalización.
+
+**Asignar responsabilidad al llamar y registrar el inicio de atención son momentos distintos.** Otro operador no puede llamar ni iniciar el mismo folio por su cuenta. Se conserva la reasignación administrativa ya acordada cuando el responsable está desactivado, con motivo e historial. Estos acuerdos se registran en la [decisión 004](decisiones/004-cola-y-responsabilidad-de-folios.md); los folios y su flujo siguen pendientes de implementación.
 
 No se llama automáticamente al siguiente ciudadano. Tras finalizar, el operador decide cuándo continuar, sin una espera fija obligatoria. El tiempo transcurrido por sí solo no cierra ni deniega un folio.
 
@@ -79,7 +83,7 @@ Ambas acciones requieren motivo y confirmación. El folio pasa a Finalizado y el
 
 La pausa está disponible en todo momento, incluso con un ciudadano Llamado o En atención. Requiere motivo y el operador puede reanudar cuando lo decida, sin autorización administrativa.
 
-El estado del operador pasa a En pausa; el folio conserva su estado y sus notas. Recepción consulta la pausa en Status. El administrador consulta operador, motivo, inicio, fin, duración, oficina y folio asociado en Registro de actividad.
+El estado del operador pasa a En pausa; el folio conserva su asignación al operador, su estado y sus notas. Recepción consulta la pausa en Status. El administrador consulta operador, motivo, inicio, fin, duración, oficina y folio asociado en Registro de actividad.
 
 Los prototipos muestran por separado el tiempo desde el inicio de la atención y el tiempo de pausa.
 

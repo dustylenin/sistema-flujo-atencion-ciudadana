@@ -68,13 +68,17 @@ El registro no puede completarse sin nombre, trámite u oficina. Si falta una op
 ### Consultar, llamar e iniciar una atención
 
 1. Inicia sesión y accede al espacio de operación.
-2. Consulta Pendientes en Cola de atención para sus oficinas asignadas; no selecciona oficinas desde su panel.
-3. Llama al ciudadano con la llegada más antigua de la cola correspondiente. El folio pasa de **En espera** a **Llamado**.
-4. Cuando el ciudadano se presenta, pulsa Iniciar atención.
-5. El sistema verifica el estado Llamado y el permiso del operador para esa oficina.
-6. El folio pasa a **En atención** y se registran automáticamente operador, fecha y hora de inicio.
+2. Consulta Pendientes en la cola conjunta: reúne los folios En espera de todas las oficinas donde tiene asignación activa. No selecciona oficinas desde su panel.
+3. Pulsa Llamar al siguiente. El sistema selecciona la llegada original más antigua entre esas oficinas. El folio pasa de **En espera** a **Llamado** y queda reservado y asignado al operador que realizó el llamado.
+4. Cuando el ciudadano se presenta, ese operador pulsa Iniciar atención.
+5. El sistema verifica el estado Llamado, la responsabilidad asignada y el permiso del operador para la oficina del folio.
+6. El folio pasa a **En atención** y se registran automáticamente la fecha y hora de inicio; su responsable ya quedó asignado al llamar.
 
-Si otro operador ya inició la misma atención, el sistema impide un segundo inicio simultáneo. No se llama automáticamente al siguiente: tras finalizar, el operador decide cuándo continuar sin una espera fija obligatoria. El tiempo transcurrido por sí solo no cierra ni deniega un folio.
+**La asignación de responsabilidad y el inicio de atención son momentos distintos.** Otro operador no puede llamar ni iniciar el mismo folio por su cuenta; se impiden llamadas duplicadas y un segundo inicio simultáneo. Se mantiene la reasignación administrativa ya acordada si el responsable está desactivado, con motivo e historial.
+
+Desactivar una oficina no excluye sus pendientes de la cola conjunta ni impide atenderlos cuando el operador conserva la asignación activa; sigue impidiendo nuevos registros. No se llama automáticamente al siguiente: tras finalizar, el operador decide cuándo continuar sin una espera fija obligatoria. El tiempo transcurrido por sí solo no cierra ni deniega un folio.
+
+La [decisión 004](decisiones/004-cola-y-responsabilidad-de-folios.md) registra estos acuerdos aprobados; los folios y este flujo siguen pendientes de implementación.
 
 ### Agregar información durante la atención
 
@@ -130,7 +134,7 @@ El operador no traslada folios desde Atención actual. El traslado no finaliza l
 ### Pausar y reanudar
 
 1. El operador solicita una pausa en cualquier momento, incluso con un folio Llamado o En atención, y registra el motivo.
-2. Su disponibilidad pasa a **En pausa**; el folio conserva estado y notas.
+2. Su disponibilidad pasa a **En pausa**; el folio conserva su asignación al operador, estado y notas.
 3. Reanuda cuando lo decide, sin autorización administrativa.
 
 Recepción consulta la pausa en Status. El administrador consulta operador, motivo, inicio, fin, duración, oficina y folio asociado en Registro de actividad. Los prototipos muestran separados el tiempo desde el inicio de atención y el tiempo de pausa.
@@ -140,13 +144,13 @@ Recepción consulta la pausa en Status. El administrador consulta operador, moti
 | Paso | Estado o evento | Información registrada |
 | --- | --- | --- |
 | Recepción confirma el registro | En espera | Ciudadano, trámite, oficina, usuario de recepción y llegada. |
-| Operador llama al siguiente | Llamado | Folio llamado según la llegada más antigua. |
-| Operador inicia la atención | En atención | Operador y fecha y hora de inicio. |
+| Operador llama al siguiente | Llamado | Llegada original más antigua de la cola conjunta; folio reservado y asignado al operador que llamó. |
+| Operador responsable inicia la atención | En atención | Fecha y hora de inicio, distintas del momento de asignación al llamar. |
 | Operador escribe o edita la nota | Nota de atención abierta | Texto, autor, fecha y oficina. |
 | Administrador consulta una incidencia | Incidencia asociada | Descripción, responsable, fecha y oficinas involucradas. |
 | Recepción traslada | En espera en la nueva oficina | Nueva oficina y trámite, motivo, responsable y fecha; folio, historial y llegada original conservados. |
 | Operador finaliza o deniega; Recepción cierra por ausencia | Finalizado | Nota de cierre, motivo cuando corresponde, responsable y tiempos. |
-| Operador pausa o reanuda | Disponibilidad; folio sin cambio | Motivo, inicio, fin, duración, oficina y folio asociado. |
+| Operador pausa o reanuda | Disponibilidad; asignación y estado del folio sin cambio | Motivo, inicio, fin, duración, oficina y folio asociado. |
 | Recepción corrige datos | Corrección registrada | Valores anteriores y nuevos, responsable, fecha y oficina. |
 | Administrador restaura o reasigna | Corrección administrativa | Motivo, responsables y evidencia original; llegada o estado conservados según la acción. |
 

@@ -37,11 +37,13 @@ Oficina de Registro de Marca y Oficina de Buró de Crédito son ejemplos. No se 
 
 | ID | Requisito |
 | --- | --- |
-| RF-13 | Permitir al operador consultar pendientes e historial de sus oficinas asignadas en Cola de atención. El historial permite buscar por folio o nombre y filtrar por fecha o rango, trámite y estado. |
-| RF-14 | Permitir llamar al ciudadano con la llegada más antigua de la cola correspondiente, pasando de En espera a Llamado. Cuando se presenta, el operador pulsa Iniciar atención; pasa a En atención y se registran operador, fecha y hora de inicio. |
+| RF-13 | Permitir al operador consultar una cola conjunta de folios En espera de todas las oficinas donde tiene asignación activa, sin seleccionar oficina desde su panel, y el historial de sus oficinas asignadas. El historial permite buscar por folio o nombre y filtrar por fecha o rango, trámite y estado. |
+| RF-14 | “Llamar al siguiente” selecciona la llegada original más antigua entre todas las oficinas con asignación activa del operador. Al llamar, el folio pasa de En espera a Llamado y queda reservado y asignado a quien llamó. Ese operador continúa con Iniciar atención cuando el ciudadano se presenta; pasa a En atención y se registran la fecha y hora de inicio. Otro operador no puede llamar ni iniciar ese folio por su cuenta; se mantiene la reasignación administrativa acordada para responsables desactivados, con motivo e historial. |
 | RF-15 | Ofrecer texto libre para la nota de atención. El operador puede editarla mientras la atención está abierta; la redacción y extensión dependen de él. |
 | RF-16 | Conservar las notas vinculadas a la atención con autor, fecha y oficina. Tras finalizar quedan disponibles para consulta. |
 | RF-17 | Exigir una nota con contenido y confirmación para finalizar; registrar Finalizado y la fecha y hora de fin. Lo ocurrido se describe en la nota, sin clasificación Concretado / No concretado. |
+
+La cola conjunta incluye los pendientes de oficinas desactivadas cuando la asignación del operador sigue activa: desactivar la oficina impide nuevos registros, no atender sus pendientes. La asignación de responsabilidad ocurre al llamar; el inicio de atención se registra después, al pasar a En atención. Son momentos distintos, conforme a la [decisión 004](decisiones/004-cola-y-responsabilidad-de-folios.md), aprobada y pendiente de implementación.
 
 Para el lanzamiento se contempla un operador por oficina; más operadores se conservan como posibilidad de crecimiento. No se llama automáticamente al siguiente ciudadano: el operador decide cuándo continuar, sin espera fija obligatoria. El tiempo transcurrido por sí solo no cierra ni deniega un folio.
 
@@ -58,7 +60,7 @@ Para el lanzamiento se contempla un operador por oficina; más operadores se con
 ### Pausas, disponibilidad y correcciones aprobadas
 
 - Recepción consulta Status en tarjetas por oficina con orden fijo: operador y disponibilidad, ciudadanos en espera, espera más larga y duración de la atención actual. Distingue Libre, Ocupado, En pausa e Inactivo.
-- El operador puede pausar en cualquier momento, incluso con un folio Llamado o En atención, con motivo obligatorio, y reanudar sin autorización administrativa. Su estado pasa a En pausa; el folio conserva estado y notas. Recepción consulta la pausa en Status. El administrador consulta operador, motivo, inicio, fin, duración, oficina y folio asociado en Registro de actividad. Los prototipos separan el tiempo desde el inicio de atención y el tiempo de pausa.
+- El operador puede pausar en cualquier momento, incluso con un folio Llamado o En atención, con motivo obligatorio, y reanudar sin autorización administrativa. Su estado pasa a En pausa; el folio conserva su asignación al operador, estado y notas. Recepción consulta la pausa en Status. El administrador consulta operador, motivo, inicio, fin, duración, oficina y folio asociado en Registro de actividad. Los prototipos separan el tiempo desde el inicio de atención y el tiempo de pausa.
 - El administrador puede restaurar el estado anterior con motivo obligatorio, conservando el registro original y la corrección con sus responsables. Si vuelve a En espera conserva la llegada original.
 - El administrador puede reasignar un folio abierto de un operador desactivado a uno activo de la misma oficina, con motivo obligatorio. Conserva oficina, estado, notas y autores, y registra la reasignación en el historial.
 - Registro de actividad filtra por fecha, usuario, oficina y acción. Reúne pausas y reanudaciones, cierres, traslados, reasignaciones, correcciones de datos o estados y cambios en cuentas, oficinas, trámites y asignaciones. Conserva evidencia de las acciones originales.
@@ -71,14 +73,15 @@ Para el lanzamiento se contempla un operador por oficina; más operadores se con
 | Correo electrónico y teléfono | Capturados en recepción; opcionales. |
 | Trámite y oficina inicial | Oficina elegida manualmente y después un trámite de esa oficina; obligatorios. |
 | Usuario que registra y llegada | Registrados automáticamente. |
-| Operador e inicio de atención | Registrados automáticamente al iniciar la atención. |
+| Operador responsable | Asignado automáticamente al llamar; el folio queda reservado para ese operador, sin alterar la excepción de reasignación administrativa acordada. |
+| Inicio de atención | Fecha y hora registradas al pasar de Llamado a En atención; distinto de la asignación al llamar. |
 | Fin de atención | Registrado automáticamente al finalizarla. |
 | Resultado | Estado Finalizado; lo ocurrido se describe en la nota, incluido el motivo de denegación o ausencia. |
 | Notas | Texto del operador, editable mientras la atención está abierta y consultable tras finalizar; autor, fecha y oficina. |
 | Incidencias | Descripción aportada por un usuario autorizado; autor, fecha y hora registrados automáticamente. |
 | Transferencias | Origen, destino y motivo; usuario, fecha y hora registrados automáticamente. |
 
-El recorrido normal es **En espera → Llamado → En atención → Finalizado**. Denegación y ausencia también cierran como Finalizado. Una incidencia no implica por sí sola el cierre. Un traslado mantiene el folio En espera y su llegada original. Una pausa cambia la disponibilidad del operador sin cambiar el estado del folio.
+El recorrido normal es **En espera → Llamado → En atención → Finalizado**. Denegación y ausencia también cierran como Finalizado. Una incidencia no implica por sí sola el cierre. Un traslado mantiene el folio En espera y su llegada original. Una pausa cambia la disponibilidad del operador sin cambiar la asignación ni el estado del folio.
 
 ## Requisitos no funcionales
 
@@ -88,7 +91,7 @@ El recorrido normal es **En espera → Llamado → En atención → Finalizado**
 | RNF-02 | Confidencialidad | Proteger los datos personales, las credenciales, las notas y las incidencias mediante controles de acceso y protección durante su transmisión y almacenamiento. |
 | RNF-03 | Integridad del historial | Permitir editar la nota mientras la atención está abierta y conservarla para consulta tras finalizar. Las correcciones de datos o estados conservan evidencia de las acciones originales. Los cambios o desactivaciones de catálogos y cuentas no deben eliminar el historial. |
 | RNF-04 | Trazabilidad temporal | Generar fechas y horas desde una referencia de tiempo consistente y mostrarlas con una zona horaria identificable. La representación debe permitir reconstruir el orden de los eventos. |
-| RNF-05 | Consistencia | Evitar que dos operadores inicien simultáneamente la misma atención y mantener coherentes el estado, los tiempos y el cierre. |
+| RNF-05 | Consistencia | Evitar llamadas duplicadas y que otro operador inicie por su cuenta un folio reservado al operador que llamó; impedir un segundo inicio simultáneo y mantener coherentes responsabilidad, estado, tiempos y cierre, respetando la reasignación administrativa acordada. |
 | RNF-06 | Usabilidad | Presentar formularios claros, distinguir campos obligatorios y opcionales y comunicar errores de captura de forma comprensible. |
 | RNF-07 | Configurabilidad | Mantener oficinas y trámites como datos administrables, sin depender de nombres o listas fijas en el código. |
 | RNF-08 | Evolución de la arquitectura | Conservar notas e incidencias como registros identificables, vinculados a la atención, al autor y al momento de creación. Separar conceptualmente estos datos de cualquier mecanismo futuro de análisis para permitir extensiones sin alterar el historial. |
@@ -100,7 +103,7 @@ No se establecen todavía cifras de disponibilidad, tiempos de respuesta, volume
 - El flujo general de captura de incidencias y sus permisos adicionales, que los acuerdos no precisan más allá de la consulta y conservación de registros.
 - El alcance de consulta del historial para cada rol y los parámetros operativos de rendimiento y conservación de datos.
 
-La selección manual de oficina, la relación de cada trámite con una sola oficina, el orden de llamada por llegada y las reglas de traslado ya están definidos. El alcance pendiente del historial se limita a lo que no describen las pantallas y funciones acordadas.
+La selección manual de oficina, la relación de cada trámite con una sola oficina, la cola conjunta de oficinas con asignación activa, el orden de llamada por llegada original, la responsabilidad desde Llamado y las reglas de traslado ya están definidos. Los folios siguen pendientes de implementación. El alcance pendiente del historial se limita a lo que no describen las pantallas y funciones acordadas.
 
 ## Fuera de la versión 1 y posibles extensiones
 

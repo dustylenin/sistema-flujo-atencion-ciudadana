@@ -260,6 +260,7 @@ Las denegaciones, los cierres por ausencia, las pausas y los traslados se docume
 - [Validación de usuarios en PostgreSQL](docs/pruebas/001-usuarios-postgresql.md): migraciones aplicadas, pruebas puntuales, restricciones y alcance de la comprobación.
 - [Diseño de oficinas, trámites y asignaciones](docs/decisiones/002-oficinas-tramites-y-asignaciones.md): estado de catálogos y asignaciones implementados, con protecciones definitivas por folios pendientes.
 - [Servicios de asignación y registro de actividad](docs/decisiones/003-servicios-de-asignacion-y-actividad.md): creación/reactivación, autorización, eventos y bloqueos implementados y revisados; alcance y pendientes.
+- [Cola conjunta y responsabilidad desde Llamado](docs/decisiones/004-cola-y-responsabilidad-de-folios.md): acuerdos funcionales aprobados; folios y flujo de atención pendientes de implementación.
 - [Validación de oficinas y trámites en PostgreSQL](docs/pruebas/002-oficinas-tramites-postgresql.md): 37 pruebas satisfactorias en esta etapa y límites de las protecciones implementadas.
 - [Verificación de migraciones reales en PostgreSQL](docs/pruebas/003-migraciones-postgresql.md): 42 pruebas satisfactorias, 18 migraciones aplicadas y comprobaciones finales en la segunda base exclusiva de pruebas.
 - [Asignaciones en PostgreSQL](docs/pruebas/005-asignaciones-postgresql.md): 74 pruebas antes del ajuste final, 3 pruebas de concurrencia posteriores y 20 migraciones en pruebas; evidencia de la etapa anterior a su aplicación local.
