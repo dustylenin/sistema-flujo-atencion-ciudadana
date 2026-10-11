@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "tramites.apps.TramitesConfig",
 ]
 AUTH_USER_MODEL = "usuarios.Usuario"
+LOGIN_URL = "usuarios:login"
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",

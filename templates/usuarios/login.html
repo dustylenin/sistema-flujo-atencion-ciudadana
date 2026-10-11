@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Inicio de sesión · Atención ciudadana{% endblock %}
+{% block scripts %}<script src="{% static 'js/acceso.js' %}" defer></script>{% endblock %}
+{% block content %}
+  <section class="tarjeta" aria-labelledby="titulo-acceso">
+    <h1 id="titulo-acceso">Inicio de sesión</h1>
+    <p class="orientacion">Accede con la cuenta que te proporcionó el administrador.</p>
+    <form method="post" action="{% url 'usuarios:login' %}">
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div id="error-acceso" class="error" role="alert">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <div class="grupo-campo">
+        <label for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+        {{ form.username }}
+        {{ form.username.errors }}
+      </div>
+      <div class="grupo-campo">
+        <label for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+        {{ form.password }}
+        {{ form.password.errors }}
+      </div>
+      <div id="control-contrasena" class="mostrar-contrasena" hidden>
+        <input type="checkbox" id="mostrar-contrasena" aria-controls="id_password">
+        <label for="mostrar-contrasena">Mostrar contraseña</label>
+      </div>
+      <button type="submit" class="boton-principal">Entrar</button>
+    </form>
+    <p class="ayuda">Si necesitas una cuenta o ayuda para acceder, contacta al administrador.</p>
+  </section>
+{% endblock %}

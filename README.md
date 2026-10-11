@@ -6,9 +6,9 @@ El sistema busca mantener un registro trazable desde la recepción hasta el resu
 
 ## Estado del proyecto
 
-**Etapa actual: llamado y reserva con diseño revisado; implementación y pruebas pendientes.** La [propuesta de la segunda entrega](docs/decisiones/008-diseno-llamado-y-reserva.md) documenta contrato, comprobantes, reserva, evidencia, límite global y bloqueos; todavía no implementa llamado ni genera su migración.
+**Etapa actual: inicio de sesión y acceso por rol implementados y comprobados en pruebas; revisión interactiva pendiente.** La [decisión 009](docs/decisiones/009-inicio-de-sesion-y-acceso-por-rol.md) describe login, logout POST con CSRF, autorización por cuenta activa y rol vigente, y los tres destinos mínimos. Pasaron **25 pruebas nuevas y la suite completa de 165 pruebas, que incluye esas 25**. Se revisaron capturas en Firefox de escritorio y móvil; las comprobaciones y sus límites constan en el [registro 011](docs/pruebas/011-inicio-de-sesion-y-acceso-postgresql.md).
 
-El **siguiente orden de trabajo** es revisar inicio de sesión y acceso por rol, y después la primera pantalla de recepción para probar el registro visual. La implementación del llamado queda pendiente.
+El **siguiente orden de trabajo** es revisar esta pantalla de acceso y después implementar la primera pantalla de recepción conectada al registro existente, para probar el registro visual. La implementación del llamado queda pendiente. Su [propuesta de la segunda entrega](docs/decisiones/008-diseno-llamado-y-reserva.md) conserva el estado de diseño revisado, con implementación y pruebas pendientes; todavía no se genera su migración.
 
 La primera entrega de pausa, reanudación y disponibilidad está implementada, revisada en PostgreSQL de pruebas y con `folios.0002` aplicada y verificada localmente. Incluye consultas por rol, disponibilidad derivada y persistencia conjunta de pausa, evento y comprobante, con autorización vigente, solicitudes repetidas y barreras del ORM reutilizadas. Con `config.settings_test_migrations`, la conexión real confirmó `test_atencion_catalogos_migraciones` y `atencion_test`. Pasaron **37 pruebas nuevas, incluidas 12 de concurrencia, y la suite completa de 140 pruebas que incluye esas 37**; los conteos no se suman. `check`, correspondencia modelos/migraciones y formato fueron correctos. La inspección verificó 3 tablas nuevas, 22 columnas, 19 restricciones y 15 índices, **22 migraciones aplicadas sin pendientes en pruebas** y cero datos residuales de aplicación. La revisión crítica posterior no encontró defectos, no modificó archivos ni ejecutó nuevas pruebas. El [registro de pausas y disponibilidad](docs/pruebas/009-pausas-disponibilidad-postgresql.md) conserva comandos, correcciones previas, resultados y límites.
 
@@ -39,15 +39,15 @@ La **segunda entrega de llamado y reserva tiene diseño revisado; implementació
 ## Estructura inicial
 
 ```text
-config/          Configuración, rutas vacías y entradas ASGI/WSGI
-usuarios/        Usuario personalizado, protecciones de rol y pruebas
+config/          Configuración, rutas de acceso y entradas ASGI/WSGI
+usuarios/        Usuario, acceso, protecciones de rol y pruebas
 oficinas/        Catálogo, asignaciones, eventos, servicios y pruebas
 tramites/        Catálogo de trámites con oficina fija y pruebas
 folios/          Registro inicial, pausas, disponibilidad, eventos, servicios y pruebas
 docs/            Documentación del producto conservada
-templates/       Carpeta reservada para plantillas; sin pantallas
-static/css/      Carpeta reservada para estilos
-static/js/       Carpeta reservada para JavaScript
+templates/       Inicio de sesión y destinos mínimos por rol
+static/css/      Estilos institucionales responsivos de acceso
+static/js/       Mostrar/ocultar contraseña, opcional
 static/img/      Carpeta reservada para imágenes
 manage.py        Comandos de Django
 requirements.txt Dependencias del entorno
@@ -55,13 +55,27 @@ requirements.txt Dependencias del entorno
 .gitignore       Excluye entorno virtual, secretos y archivos generados
 ```
 
-`AUTH_USER_MODEL` apunta a `usuarios.Usuario`, basado en `AbstractUser`, conforme a la [decisión aprobada de usuarios y asignaciones](docs/decisiones/001-usuarios-y-asignaciones.md). Conserva `username` como identificador de acceso y los campos heredados. La autorización funcional de creación/reactivación de asignaciones está implementada en servicios; las pantallas y los demás permisos funcionales siguen pendientes.
+`AUTH_USER_MODEL` apunta a `usuarios.Usuario`, basado en `AbstractUser`, conforme a la [decisión aprobada de usuarios y asignaciones](docs/decisiones/001-usuarios-y-asignaciones.md). Conserva `username` como identificador de acceso y los campos heredados. La autorización funcional de creación/reactivación de asignaciones está implementada en servicios; el acceso y los destinos mínimos ya existen. Las pantallas de trabajo y los demás permisos funcionales siguen pendientes.
 
 El campo `rol` es obligatorio, sin valor predeterminado, y admite `ADMINISTRADOR`, `RECEPCION` u `OPERADOR`. `create_user()` y `create_superuser()` exigen el argumento explícito `rol`; los valores vacíos o inválidos se rechazan antes de guardar. El guardado directo también valida el rol. En PostgreSQL ya se comprobaron `UNIQUE (username)`, `NOT NULL` de `rol` y la restricción `usuarios_usuario_rol_valido` para los tres roles, incluidos intentos mediante `update()` que omiten la validación de `save()`.
 
-`rol`, `is_active`, `is_staff` e `is_superuser` son independientes. El manager conserva el comportamiento técnico de Django al crear superusuarios, sin asignarles automáticamente el rol `ADMINISTRADOR`. Esos indicadores no implementan los permisos de las pantallas propias.
+`rol`, `is_active`, `is_staff` e `is_superuser` son independientes. El manager conserva el comportamiento técnico de Django al crear superusuarios, sin asignarles automáticamente el rol `ADMINISTRADOR`. El acceso implementado comprueba cuenta activa y rol vigente en cada petición; `is_staff` e `is_superuser` no conceden permisos funcionales. No se habilita el panel técnico de Django.
 
-`REQUIRED_FIELDS` conserva los campos de `AbstractUser` y añade `rol`: cuando se autorice usar `createsuperuser`, el modo interactivo solicitará el rol y el modo no interactivo requerirá `--rol` o `DJANGO_SUPERUSER_ROL`. Esto no crea una cuenta ahora ni habilita gestión de contraseñas o pantallas. La creación de cuentas desde Usuarios y la gestión exclusiva de contraseñas por el administrador siguen pendientes de implementación.
+`REQUIRED_FIELDS` conserva los campos de `AbstractUser` y añade `rol`: cuando se autorice usar `createsuperuser`, el modo interactivo solicitará el rol y el modo no interactivo requerirá `--rol` o `DJANGO_SUPERUSER_ROL`. Esto no crea una cuenta ahora ni habilita gestión de contraseñas. La creación de cuentas desde Usuarios y la gestión exclusiva de contraseñas por el administrador siguen pendientes de implementación.
+
+## Abrir el inicio de sesión en Linux Mint
+
+Desde la carpeta del proyecto, con el entorno virtual, las variables locales y PostgreSQL ya preparados:
+
+```bash
+DJANGO_DEBUG=true .venv/bin/python -B manage.py runserver 127.0.0.1:8000 --settings=config.settings
+```
+
+Abrir **http://127.0.0.1:8000/acceso/** en Firefox u otro navegador. La depuración se activa solo para este servidor de desarrollo ligado a la interfaz local, permitiendo servir CSS y JavaScript con `runserver`. Detener con `Ctrl+C`. Este comando está documentado para uso local; no se ejecutó contra la base normal durante la entrega.
+
+La pantalla puede abrirse sin cuenta. Para iniciar sesión falta disponer de una cuenta activa con usuario, contraseña asignada por el administrador y uno de los tres roles funcionales; no se crearon cuentas ni se comprobó su existencia en la base normal en esta etapa. No se necesita un superusuario técnico. La gestión de cuentas y contraseñas mediante pantallas sigue pendiente; su preparación local será una acción separada autorizada, sin publicar secretos.
+
+El acceso dirige a `/recepcion/`, `/operacion/` o `/administracion/`. Esos destinos muestran únicamente la identidad conectada y el cierre de sesión. El formulario funciona sin JavaScript; con él se habilita mostrar/ocultar contraseña. No hay registro público, recuperación, cambio obligatorio de contraseña ni acciones de recepción o llamado. La referencia visual exacta y la revisión realizada se documentan en la decisión 009 y el registro 011.
 
 ## Preparación en Linux Mint
 
@@ -228,7 +242,7 @@ Después se ejecutaron con el mismo entorno virtual:
 
 Todas las comprobaciones fueron satisfactorias, sin migraciones ni cambios de modelos pendientes en esa etapa de usuarios. Se confirmó el modelo activo `usuarios.Usuario` y la existencia de `usuarios_usuario`. Las pruebas de lectura, escritura, contraseñas mediante `check_password`, desactivación y restricciones se realizaron dentro de una transacción revertida, con bloques `atomic` internos para los errores de integridad esperados y captura fuera de esos bloques. No quedó ningún usuario ficticio ni se creó una cuenta permanente.
 
-Fueron pruebas puntuales; en esa validación de usuarios no se añadió una suite automática de integración. La comprobación de `check_password` no valida el inicio de sesión ni la fortaleza de contraseñas. Las etapas posteriores de oficinas y trámites incorporan una suite con PostgreSQL y verifican los archivos de migración mediante su aplicación real en la segunda base de pruebas, descrita arriba. La etapa posterior de asignaciones implementa creación/reactivación y sus eventos. El registro inicial de folios ya está implementado y revisado en pruebas; su migración ya está aplicada localmente. La primera entrega de pausas y disponibilidad también está revisada en pruebas, con `folios.0002` aplicada y verificada localmente, según el [registro 010](docs/pruebas/010-migracion-pausas-disponibilidad-local.md). Siguen pendientes las restantes acciones de folios, la auditoría global, el acceso mediante pantallas, los demás permisos funcionales y las protecciones definitivas por folios. El arranque funcional sigue pendiente; no hay rutas de aplicación ni panel administrativo habilitado. Véase el [registro de casos y resultados de usuarios](docs/pruebas/001-usuarios-postgresql.md).
+Fueron pruebas puntuales; en esa validación de usuarios no se añadió una suite automática de integración. La comprobación de `check_password` no valida el inicio de sesión ni la fortaleza de contraseñas. Las etapas posteriores de oficinas y trámites incorporan una suite con PostgreSQL y verifican los archivos de migración mediante su aplicación real en la segunda base de pruebas, descrita arriba. La etapa posterior de asignaciones implementa creación/reactivación y sus eventos. El registro inicial de folios ya está implementado y revisado en pruebas; su migración ya está aplicada localmente. La primera entrega de pausas y disponibilidad también está revisada en pruebas, con `folios.0002` aplicada y verificada localmente, según el [registro 010](docs/pruebas/010-migracion-pausas-disponibilidad-local.md). Siguen pendientes las restantes acciones de folios, la auditoría global, las pantallas de trabajo, los demás permisos funcionales y las protecciones definitivas por folios. El acceso mediante pantallas y los destinos mínimos ya están implementados y comprobados en esta etapa, según el [registro 011](docs/pruebas/011-inicio-de-sesion-y-acceso-postgresql.md); no se habilita el panel técnico de Django. Véase el [registro de casos y resultados de usuarios](docs/pruebas/001-usuarios-postgresql.md).
 
 El **10 de octubre de 2026** se aplicaron los catálogos a la base local mediante `config.settings`, después de confirmar por conexión real `atencion_ciudadana` con `atencion_app`, Git limpio, las 16 migraciones anteriores aplicadas y un plan con exactamente `oficinas.0001_initial` y `tramites.0001_initial`. Las comprobaciones previas de Django pasaron y no se detectaron cambios de modelos. Se ejecutó:
 
@@ -281,6 +295,8 @@ El operador decide cuándo llamar al siguiente; no hay llamada automática ni ci
 - [Disponibilidad y folio actual del operador](docs/decisiones/006-disponibilidad-y-folio-actual-del-operador.md): acuerdos aprobados el 11 de octubre de 2026 y ambigüedades restantes; llamado y reserva pendientes, con la primera entrega de pausas y consultas ya revisada en pruebas.
 - [Diseño de pausas y disponibilidad](docs/decisiones/007-diseno-pausas-y-disponibilidad.md): primera entrega implementada y revisada en pruebas, con modelos, contratos, permisos, solicitudes repetidas y bloqueos; migración aplicada y verificada localmente.
 - [Diseño de llamado y reserva](docs/decisiones/008-diseno-llamado-y-reserva.md): diseño revisado; implementación y pruebas pendientes. Conserva comprobantes, eventos CREACION, cola combinada, pausa y máximo global; solo LLAMADO devuelve folio y evento.
+- [Inicio de sesión y acceso por rol](docs/decisiones/009-inicio-de-sesion-y-acceso-por-rol.md): implementación, rutas, autorización, referencia SVG y revisión interactiva pendiente.
+- [Comprobaciones de inicio de sesión y acceso](docs/pruebas/011-inicio-de-sesion-y-acceso-postgresql.md): 25 pruebas nuevas incluidas en la suite de 165; aislamiento, CSRF, sesiones, resultados y revisión de capturas en Firefox.
 - [Registro inicial de folios](docs/decisiones/005-registro-inicial-de-folios.md): registro por Recepción, estado En espera y evento de creación implementados y revisados en pruebas; migración aplicada localmente.
 - [Registro inicial de folios en PostgreSQL](docs/pruebas/007-registro-inicial-folios-postgresql.md): suite anterior de 102 pruebas, corrección del descriptor inverso y 3 pruebas afectadas posteriores; 21 migraciones en pruebas y límites pendientes.
 - [Aplicación local de la migración de folios](docs/pruebas/008-migracion-folios-local.md): 21 migraciones aplicadas, plan vacío, esquema contrastado y dos tablas nuevas sin registros; sin pruebas sobre la base normal.

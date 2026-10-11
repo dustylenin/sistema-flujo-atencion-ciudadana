@@ -1,0 +1,27 @@
+{% load static %}
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Sistema de flujo de atención ciudadana{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/acceso.css' %}">
+  {% block scripts %}{% endblock %}
+</head>
+<body>
+  <div class="estructura-acceso">
+    <aside class="identidad" aria-label="Identidad del sistema">
+      <div class="marca" aria-hidden="true">SF</div>
+      <div class="identidad-contenido">
+        <p class="nombre-sistema">Sistema de flujo de<br>atención ciudadana</p>
+        <p>Organización y seguimiento de la atención.</p>
+        <p class="roles">Recepción · Operador · Administrador</p>
+      </div>
+      <p class="identidad-pie">Atención ciudadana</p>
+    </aside>
+    <main id="contenido" class="contenido">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

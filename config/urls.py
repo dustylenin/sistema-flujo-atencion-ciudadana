@@ -1,2 +1,5 @@
-"""Sin rutas de aplicación hasta implementar las pantallas aprobadas."""
-urlpatterns = []
+"""Acceso común y destinos mínimos por rol funcional."""
+
+from django.urls import include, path
+
+urlpatterns = [path("", include("usuarios.urls"))]

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}{{ titulo }} · Atención ciudadana{% endblock %}
+{% block content %}
+  <section class="tarjeta" aria-labelledby="titulo-destino">
+    <h1 id="titulo-destino">{{ titulo }}</h1>
+    <p class="orientacion">Sesión iniciada como <strong>{{ user.get_username }}</strong>.</p>
+    <form method="post" action="{% url 'usuarios:logout' %}">
+      {% csrf_token %}
+      <button type="submit" class="boton-principal">Cerrar sesión</button>
+    </form>
+  </section>
+{% endblock %}
