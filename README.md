@@ -18,6 +18,8 @@ La [decisión de servicios de asignación y actividad](docs/decisiones/003-servi
 
 El **11 de octubre de 2026** se aprobaron la disponibilidad y el máximo de un folio actual por operador, contando todas sus oficinas, en la [decisión 006](docs/decisiones/006-disponibilidad-y-folio-actual-del-operador.md). **Llamado, disponibilidad y pausa todavía no están programados**. Esta actualización es documental y conserva las evidencias anteriores de implementación y pruebas.
 
+El siguiente alcance pendiente es la primera entrega de pausa, reanudación y consulta de disponibilidad, cuyo [diseño técnico revisado](docs/decisiones/007-diseno-pausas-y-disponibilidad.md) tiene **implementación y pruebas pendientes**. No cambia Folio ni EventoFolio ni implementa llamado, inicio, notas, cierre o pantallas. La segunda entrega prevista integrará llamado y reserva con pausa y el límite global de un folio actual. Los casos reales de Ocupado y contexto desde Llamado se verificarán con esa integración; En atención y notas se verificarán cuando se implementen.
+
 ## Tecnologías elegidas
 
 - Interfaz: HTML, CSS y JavaScript con plantillas de Django.
@@ -269,6 +271,7 @@ El operador decide cuándo llamar al siguiente; no hay llamada automática ni ci
 - [Servicios de asignación y registro de actividad](docs/decisiones/003-servicios-de-asignacion-y-actividad.md): creación/reactivación, autorización, eventos y bloqueos implementados y revisados; alcance y pendientes.
 - [Cola conjunta y responsabilidad desde Llamado](docs/decisiones/004-cola-y-responsabilidad-de-folios.md): acuerdos funcionales aprobados; llamado y flujo posterior pendientes de implementación.
 - [Disponibilidad y folio actual del operador](docs/decisiones/006-disponibilidad-y-folio-actual-del-operador.md): acuerdos aprobados el 11 de octubre de 2026 y ambigüedades restantes; llamado, disponibilidad y pausa pendientes de programación.
+- [Diseño de pausas y disponibilidad](docs/decisiones/007-diseno-pausas-y-disponibilidad.md): primera entrega técnica revisada, con modelos, contratos, permisos, solicitudes repetidas, bloqueos y validación prevista; implementación y pruebas pendientes.
 - [Registro inicial de folios](docs/decisiones/005-registro-inicial-de-folios.md): registro por Recepción, estado En espera y evento de creación implementados y revisados en pruebas; migración aplicada localmente.
 - [Registro inicial de folios en PostgreSQL](docs/pruebas/007-registro-inicial-folios-postgresql.md): suite anterior de 102 pruebas, corrección del descriptor inverso y 3 pruebas afectadas posteriores; 21 migraciones en pruebas y límites pendientes.
 - [Aplicación local de la migración de folios](docs/pruebas/008-migracion-folios-local.md): 21 migraciones aplicadas, plan vacío, esquema contrastado y dos tablas nuevas sin registros; sin pruebas sobre la base normal.
