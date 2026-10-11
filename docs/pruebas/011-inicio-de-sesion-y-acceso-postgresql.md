@@ -61,8 +61,19 @@ Se renderizó el GET de `AccesoView` con `RequestFactory`, usuario anónimo y ho
 
 Las capturas y perfiles quedaron fuera del repositorio, en `/tmp/revision-acceso-w1w0a0e5/`. Esta revisión del HTML renderizado no inició sesión ni probó controles mediante interacción. El código del SVG externo utilizado y el alcance de su aprobación se identifican en la decisión 009.
 
+## Revisión manual realizada por el usuario
+
+El **11 de octubre de 2026**, el usuario realizó una revisión interactiva en **Linux Mint con Brave** y confirmó:
+
+- Mostrar y ocultar contraseña funciona.
+- La navegación con Tab y el foco visible funcionan.
+- El formulario se adapta al reducir la ventana.
+- Las credenciales inválidas muestran un error genérico, conservan el usuario y vacían la contraseña.
+
+Estos resultados son la revisión manual comunicada por el usuario, distinta de las capturas previas de Firefox y de las **165 pruebas automatizadas existentes, que incluyen las 25 nuevas**. No se repitieron pruebas automatizadas para registrar esta revisión ni se modificó su conteo. Esta actualización modifica únicamente documentación; no crea cuentas ni conecta bases.
+
 ## Límites y siguientes comprobaciones
 
-Quedan pendientes la revisión interactiva con teclado, mostrar/ocultar contraseña, lector de pantalla, navegador sin JavaScript y una cuenta local proporcionada por el administrador. La base normal no se inspeccionó para averiguar cuentas y no se crearon cuentas en ella. La pantalla puede abrirse anónimamente siguiendo el README.
+Quedan pendientes el ingreso manual con una cuenta válida, los destinos por rol y el logout manual. **No se declaran comprobados el lector de pantalla ni el funcionamiento manual sin JavaScript**; ambos siguen pendientes. Durante la etapa de implementación la base normal no se inspeccionó para averiguar cuentas y no se crearon cuentas en ella. La pantalla puede abrirse anónimamente siguiendo el README.
 
 La primera pantalla de recepción y sus acciones siguen pendientes. El llamado y reserva permanecen en diseño; esta entrega no verifica casos reales en Llamado o En atención, notas, cierre ni correcciones administrativas. Se conservan las evidencias anteriores y sus límites.

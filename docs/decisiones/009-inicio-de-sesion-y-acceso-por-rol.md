@@ -1,7 +1,7 @@
 # 009 — Inicio de sesión y acceso por rol
 
 - Fecha: 11 de octubre de 2026.
-- Estado: implementado y comprobado en PostgreSQL de pruebas; pendiente de revisión interactiva con el usuario.
+- Estado: implementado y comprobado en PostgreSQL de pruebas; revisión manual parcial realizada por el usuario en Linux Mint con Brave. Ingreso con cuenta válida, destinos por rol y logout manual pendientes.
 - Evidencia: [comprobaciones de acceso](../pruebas/011-inicio-de-sesion-y-acceso-postgresql.md).
 
 ## Respaldo funcional y alcance
@@ -56,7 +56,9 @@ El formulario y logout funcionan sin JavaScript. El único script habilita la ca
 - `usuarios/test_acceso.py`: 25 pruebas nuevas con sesiones, autorización y CSRF, exclusivamente en `config.settings_test_migrations` y con las barreras de identidad real existentes.
 - README y registro 011: preparación local y resultados de la etapa.
 
-La evidencia diferencia las 25 pruebas nuevas y las 165 de la suite completa, que ya las incluyen, de la revisión de dos capturas de Firefox. No se verificaron interacciones manuales con teclado, lector de pantalla ni autenticación desde un navegador con una cuenta normal. No se crearon cuentas en la base normal ni se conectó a ella durante esta entrega.
+La evidencia diferencia las 25 pruebas nuevas y las 165 de la suite completa, que ya las incluyen, de la revisión de dos capturas de Firefox. Durante la implementación no se verificaron interacciones manuales con teclado, lector de pantalla ni autenticación desde un navegador con una cuenta normal. No se crearon cuentas en la base normal ni se conectó a ella durante esa etapa.
+
+El **11 de octubre de 2026**, el usuario confirmó manualmente en **Linux Mint con Brave** mostrar/ocultar contraseña, navegación con Tab y foco visible, adaptación al reducir la ventana y el error genérico para credenciales inválidas, conservando el usuario y vaciando la contraseña. El [registro 011](../pruebas/011-inicio-de-sesion-y-acceso-postgresql.md#revisión-manual-realizada-por-el-usuario) conserva esta revisión separada de las pruebas automatizadas existentes, que no se repitieron. Siguen pendientes el ingreso con una cuenta válida, los destinos por rol y el logout manual. No se declaran comprobados el lector de pantalla ni el funcionamiento manual sin JavaScript.
 
 ## Preparación local pendiente
 
