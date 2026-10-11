@@ -1,8 +1,8 @@
 # Sistema de Flujo de Atención Ciudadana
 
-Reglas vigentes tras la revisión de los prototipos. Actualización: 10 de octubre de 2026.
+Reglas vigentes tras la revisión de los prototipos. Actualización: 11 de octubre de 2026.
 
-Este documento reúne las decisiones aprobadas para orientar la programación. Las revisiones realizadas corresponden a los prototipos visuales; la aplicación aún no está implementada.
+Este documento reúne las decisiones aprobadas para orientar la programación. Las revisiones visuales corresponden a los prototipos. El registro inicial de folios está implementado conforme a la [decisión 005](decisiones/005-registro-inicial-de-folios.md). Los recorridos posteriores y las pantallas siguen pendientes; llamado, disponibilidad y pausa todavía no están programados.
 
 ## Roles y acceso
 
@@ -25,7 +25,7 @@ Solo el administrador crea cuentas y establece o cambia contraseñas desde Usuar
 - La confirmación muestra folio, ciudadano, oficina, trámite, llegada y responsable del registro. Permite consultar el detalle o registrar otra atención.
 - Recepción puede corregir nombre, correo y teléfono. Se conservan los valores anteriores y nuevos, responsable, fecha y oficina.
 
-Status muestra información en tarjetas por oficina, con orden fijo: operador y disponibilidad, ciudadanos en espera, espera más larga y duración de la atención actual. Distingue Libre, Ocupado, En pausa e Inactivo.
+Status muestra información en tarjetas por oficina, con orden fijo: operador y disponibilidad, ciudadanos en espera, espera más larga y duración de la atención actual. Distingue Libre, Ocupado y En pausa conforme a la decisión 006. La etiqueta Inactivo aparece en los documentos y prototipos anteriores, pero su significado funcional sigue pendiente; no se equipara a la desactivación de la cuenta.
 
 ## Oficinas, trámites y asignaciones
 
@@ -60,11 +60,24 @@ La cola conjunta reúne los folios **En espera** de todas las oficinas donde el 
 3. Cuando el ciudadano se presenta, ese operador pulsa Iniciar atención. El folio pasa a En atención y se registra la fecha y hora de inicio.
 4. El operador registra una nota y confirma la finalización.
 
-**Asignar responsabilidad al llamar y registrar el inicio de atención son momentos distintos.** Otro operador no puede llamar ni iniciar el mismo folio por su cuenta. Se conserva la reasignación administrativa ya acordada cuando el responsable está desactivado, con motivo e historial. Estos acuerdos se registran en la [decisión 004](decisiones/004-cola-y-responsabilidad-de-folios.md); los folios y su flujo siguen pendientes de implementación.
+**Asignar responsabilidad al llamar y registrar el inicio de atención son momentos distintos.** Otro operador no puede llamar ni iniciar el mismo folio por su cuenta. Se conserva la reasignación administrativa ya acordada cuando el responsable está desactivado, con motivo e historial. Estos acuerdos se registran en la [decisión 004](decisiones/004-cola-y-responsabilidad-de-folios.md); el registro inicial ya está implementado, pero llamado y flujo posterior siguen pendientes de implementación.
 
 No se llama automáticamente al siguiente ciudadano. Tras finalizar, el operador decide cuándo continuar, sin una espera fija obligatoria. El tiempo transcurrido por sí solo no cierra ni deniega un folio.
 
 Cola de atención tiene Pendientes e Historial. El historial permite buscar por folio o nombre y filtrar por fecha o rango, trámite y estado.
+
+## Disponibilidad y folio actual del operador
+
+Acuerdos aprobados el **11 de octubre de 2026**, documentados en la [decisión 006](decisiones/006-disponibilidad-y-folio-actual-del-operador.md):
+
+- Cada operador puede tener como máximo un folio actual en **Llamado** o **En atención**, contando todas sus oficinas. Debe finalizarlo antes de llamar otro; se conservan los cierres por ausencia o denegación y las excepciones administrativas ya aprobadas.
+- **Libre**: sin folio actual y sin pausa; puede llamar sujeto a los permisos y asignaciones vigentes.
+- **Ocupado**: tiene un folio actual y no está en pausa; no puede llamar otro.
+- **En pausa**: no puede llamar, incluso sin folio actual. La pausa conserva el folio, su responsabilidad, estado y notas.
+- Al reanudar queda **Libre** si no tiene folio actual, u **Ocupado** si lo tiene.
+- La desactivación de la cuenta bloquea el acceso por separado; no equivale a disponibilidad. Una oficina puede seguir teniendo varios operadores.
+
+Siguen pendientes el significado de Inactivo y el tratamiento de restauraciones o reasignaciones administrativas que pudieran producir un segundo folio actual. No se añaden restricciones ni excepciones administrativas para resolverlo; véase la decisión 006. Llamado, disponibilidad y pausa todavía no están programados.
 
 ## Notas y finalización
 
@@ -83,7 +96,7 @@ Ambas acciones requieren motivo y confirmación. El folio pasa a Finalizado y el
 
 La pausa está disponible en todo momento, incluso con un ciudadano Llamado o En atención. Requiere motivo y el operador puede reanudar cuando lo decida, sin autorización administrativa.
 
-El estado del operador pasa a En pausa; el folio conserva su asignación al operador, su estado y sus notas. Recepción consulta la pausa en Status. El administrador consulta operador, motivo, inicio, fin, duración, oficina y folio asociado en Registro de actividad.
+La disponibilidad del operador pasa a En pausa y no puede llamar, incluso sin folio actual. Al reanudar queda Libre u Ocupado según tenga un folio actual. El folio conserva su asignación al operador, su estado y sus notas. Recepción consulta la pausa en Status. El administrador consulta operador, motivo, inicio, fin, duración, oficina y folio asociado en Registro de actividad.
 
 Los prototipos muestran por separado el tiempo desde el inicio de la atención y el tiempo de pausa.
 
@@ -125,4 +138,4 @@ Para la implementación prevalecen las reglas de este documento sobre las propue
 
 Se revisaron las pantallas principales y ventanas de las acciones acordadas, así como la coherencia visual del recorrido normal, ausencia, pausa, traslado y permisos previstos por rol. Los datos de los ejemplos son ilustrativos.
 
-La siguiente etapa es planear la programación. La implementación deberá verificar estos permisos y transiciones también en el servidor.
+La programación de llamado, disponibilidad, pausa y demás acciones posteriores al registro inicial sigue pendiente. La implementación deberá verificar estos permisos y transiciones también en el servidor.

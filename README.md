@@ -16,6 +16,8 @@ Tras aplicar las migraciones de usuarios, las comprobaciones de Django fueron sa
 
 La [decisión de servicios de asignación y actividad](docs/decisiones/003-servicios-de-asignacion-y-actividad.md) describe el alcance implementado: creación y reactivación por administrador funcional autenticado y activo, relectura de su estado en la base, resultados explícitos, bloqueos y protecciones del ORM. Retirada y cambio efectivo desde `OPERADOR` están bloqueados provisionalmente hasta verificar sus reglas completas con folios reales. Los eventos cubren únicamente creación y reactivación; no constituyen la auditoría completa del sistema. Las 42 pruebas de la etapa anterior se conservan como evidencia de usuarios, catálogos y configuración de migraciones.
 
+El **11 de octubre de 2026** se aprobaron la disponibilidad y el máximo de un folio actual por operador, contando todas sus oficinas, en la [decisión 006](docs/decisiones/006-disponibilidad-y-folio-actual-del-operador.md). **Llamado, disponibilidad y pausa todavía no están programados**. Esta actualización es documental y conserva las evidencias anteriores de implementación y pruebas.
+
 ## Tecnologías elegidas
 
 - Interfaz: HTML, CSS y JavaScript con plantillas de Django.
@@ -234,7 +236,7 @@ Ambas migraciones terminaron con `OK`. Después, `showmigrations` mostró las **
 | Recepción | Registrar y corregir datos del ciudadano, elegir oficina y trámite, consultar disponibilidad, trasladar folios En espera y cerrar por ausencia. |
 | Operador | Consultar la cola y el historial, llamar al siguiente ciudadano, iniciar la atención, registrar notas, finalizar, denegar y pausar o reanudar. |
 
-Todos los usuarios acceden mediante el mismo inicio de sesión con usuario y contraseña. Cada cuenta tiene un único rol y el administrador establece o cambia sus contraseñas. Después de autenticarse, el sistema los dirige al espacio correspondiente a su rol y permisos. Un operador puede tener una o varias oficinas asignadas por el administrador; no las selecciona desde su panel. Para el lanzamiento se contempla un operador por oficina, con posibilidad de crecimiento posterior.
+Todos los usuarios acceden mediante el mismo inicio de sesión con usuario y contraseña. Cada cuenta tiene un único rol y el administrador establece o cambia sus contraseñas. Después de autenticarse, el sistema los dirige al espacio correspondiente a su rol y permisos. Un operador puede tener una o varias oficinas asignadas por el administrador; no las selecciona desde su panel. Para el lanzamiento se contempla un operador por oficina como organización inicial; una oficina puede tener varios operadores.
 
 ## Alcance de la versión 1
 
@@ -252,7 +254,9 @@ Las oficinas de **Registro de Marca** y **Buró de Crédito** son ejemplos del c
 
 Recepción → registro del ciudadano → selección manual de oficina y trámite → En espera → llamada al ciudadano con la llegada más antigua → Llamado → inicio de atención → En atención → nota con contenido y confirmación → Finalizado.
 
-Las denegaciones, los cierres por ausencia, las pausas y los traslados se documentan como variantes de este flujo. Lo ocurrido se describe en la nota, sin clasificación Concretado / No concretado. El operador decide cuándo llamar al siguiente; no hay llamada automática ni cierre por el mero transcurso del tiempo.
+Las denegaciones, los cierres por ausencia, las pausas y los traslados se documentan como variantes de este flujo. Lo ocurrido se describe en la nota, sin clasificación Concretado / No concretado. Cada operador puede tener como máximo un folio en Llamado o En atención entre todas sus oficinas y debe finalizarlo antes de llamar otro; se conservan los cierres por ausencia o denegación y las excepciones administrativas aprobadas. **Libre**: sin folio actual y sin pausa, puede llamar sujeto a permisos y asignaciones. **Ocupado**: con folio actual y sin pausa, no puede llamar otro. **En pausa**: no puede llamar, incluso sin folio actual; conserva folio, responsabilidad, estado y notas. Al reanudar queda Libre u Ocupado según tenga un folio actual. La desactivación de la cuenta bloquea el acceso por separado y no equivale a disponibilidad.
+
+El operador decide cuándo llamar al siguiente; no hay llamada automática ni cierre por el mero transcurso del tiempo. El significado funcional de Inactivo y el tratamiento de correcciones administrativas que pudieran producir un segundo folio actual siguen pendientes en la decisión 006.
 
 ## Documentación
 
@@ -264,6 +268,7 @@ Las denegaciones, los cierres por ausencia, las pausas y los traslados se docume
 - [Diseño de oficinas, trámites y asignaciones](docs/decisiones/002-oficinas-tramites-y-asignaciones.md): estado de catálogos y asignaciones implementados, con protecciones definitivas por folios pendientes.
 - [Servicios de asignación y registro de actividad](docs/decisiones/003-servicios-de-asignacion-y-actividad.md): creación/reactivación, autorización, eventos y bloqueos implementados y revisados; alcance y pendientes.
 - [Cola conjunta y responsabilidad desde Llamado](docs/decisiones/004-cola-y-responsabilidad-de-folios.md): acuerdos funcionales aprobados; llamado y flujo posterior pendientes de implementación.
+- [Disponibilidad y folio actual del operador](docs/decisiones/006-disponibilidad-y-folio-actual-del-operador.md): acuerdos aprobados el 11 de octubre de 2026 y ambigüedades restantes; llamado, disponibilidad y pausa pendientes de programación.
 - [Registro inicial de folios](docs/decisiones/005-registro-inicial-de-folios.md): registro por Recepción, estado En espera y evento de creación implementados y revisados en pruebas; migración aplicada localmente.
 - [Registro inicial de folios en PostgreSQL](docs/pruebas/007-registro-inicial-folios-postgresql.md): suite anterior de 102 pruebas, corrección del descriptor inverso y 3 pruebas afectadas posteriores; 21 migraciones en pruebas y límites pendientes.
 - [Aplicación local de la migración de folios](docs/pruebas/008-migracion-folios-local.md): 21 migraciones aplicadas, plan vacío, esquema contrastado y dos tablas nuevas sin registros; sin pruebas sobre la base normal.

@@ -1,6 +1,6 @@
 # Flujos de usuario
 
-Este documento describe los recorridos previstos de la versión 1 conforme a los [acuerdos vigentes](acuerdos-vigentes.md), que prevalecen sobre las propuestas anteriores. La aplicación todavía no está implementada ni se ha elegido tecnología; las revisiones corresponden a prototipos visuales. Las oficinas y los trámites son configurables. Las citas programadas y la IA quedan fuera de estos flujos.
+Este documento describe los recorridos previstos de la versión 1 conforme a los [acuerdos vigentes](acuerdos-vigentes.md), que prevalecen sobre las propuestas anteriores. El registro inicial de folios está implementado conforme a la [decisión 005](decisiones/005-registro-inicial-de-folios.md). Los recorridos posteriores y las pantallas siguen pendientes; llamado, disponibilidad y pausa todavía no están programados. Las oficinas y los trámites son configurables. Las citas programadas y la IA quedan fuera de estos flujos.
 
 ## Acceso común
 
@@ -11,7 +11,7 @@ Este documento describe los recorridos previstos de la versión 1 conforme a los
 
 Si la autenticación falla, el usuario permanece en el acceso y recibe un mensaje comprensible. Si una acción no está autorizada, el sistema la rechaza.
 
-El personal usa la clave asignada por el administrador. No se exige cambiar una contraseña temporal al iniciar sesión. Una cuenta desactivada no puede acceder.
+El personal usa la clave asignada por el administrador. No se exige cambiar una contraseña temporal al iniciar sesión. Una cuenta desactivada no puede acceder. Este bloqueo es independiente de la disponibilidad del operador.
 
 ## Administrador
 
@@ -33,7 +33,7 @@ Desactivar una oficina impide nuevos registros, permite terminar sus folios pend
 3. Para un operador, asigna las oficinas en las que puede trabajar: una o varias.
 4. Guarda la configuración, que determina su acceso y las acciones permitidas.
 
-Para el lanzamiento se contempla un operador por oficina; más operadores se conservan como posibilidad de crecimiento. El operador no selecciona oficinas desde su panel. Desactivar una cuenta bloquea su acceso y conserva su historial; puede reactivarse.
+Para el lanzamiento se contempla un operador por oficina como organización inicial; una oficina puede tener varios operadores. El operador no selecciona oficinas desde su panel. Desactivar una cuenta bloquea su acceso y conserva su historial; puede reactivarse.
 
 ### Consultar y corregir registros
 
@@ -61,7 +61,7 @@ El registro no puede completarse sin nombre, trámite u oficina. Si falta una op
 
 1. Consulta folios en Atenciones del día y Detalle de atención.
 2. Puede corregir nombre, correo y teléfono. Se conservan valores anteriores y nuevos, responsable, fecha y oficina.
-3. En Status consulta tarjetas por oficina con orden fijo: operador y disponibilidad, ciudadanos en espera, espera más larga y duración de la atención actual. Distingue Libre, Ocupado, En pausa e Inactivo.
+3. En Status consulta tarjetas por oficina con orden fijo: operador y disponibilidad, ciudadanos en espera, espera más larga y duración de la atención actual. Distingue Libre, Ocupado y En pausa conforme a la decisión 006. La etiqueta Inactivo aparece en los documentos y prototipos anteriores, pero su significado funcional sigue pendiente; no se equipara a la desactivación de la cuenta.
 
 ## Operador de oficina
 
@@ -69,16 +69,18 @@ El registro no puede completarse sin nombre, trámite u oficina. Si falta una op
 
 1. Inicia sesión y accede al espacio de operación.
 2. Consulta Pendientes en la cola conjunta: reúne los folios En espera de todas las oficinas donde tiene asignación activa. No selecciona oficinas desde su panel.
-3. Pulsa Llamar al siguiente. El sistema selecciona la llegada original más antigua entre esas oficinas. El folio pasa de **En espera** a **Llamado** y queda reservado y asignado al operador que realizó el llamado.
+3. Si está Libre (sin pausa ni folio actual en Llamado o En atención en ninguna de sus oficinas), puede pulsar Llamar al siguiente, sujeto a sus permisos y asignaciones vigentes. El sistema selecciona la llegada original más antigua entre esas oficinas. El folio pasa de **En espera** a **Llamado** y queda reservado y asignado al operador que realizó el llamado.
 4. Cuando el ciudadano se presenta, ese operador pulsa Iniciar atención.
 5. El sistema verifica el estado Llamado, la responsabilidad asignada y el permiso del operador para la oficina del folio.
 6. El folio pasa a **En atención** y se registran automáticamente la fecha y hora de inicio; su responsable ya quedó asignado al llamar.
+
+Cada operador puede tener como máximo un folio actual en Llamado o En atención, contando todas sus oficinas. Mientras lo tenga y no esté en pausa, queda Ocupado y debe finalizarlo antes de llamar otro. En pausa tampoco puede llamar, incluso sin folio actual. Se conservan los cierres por ausencia o denegación y las excepciones administrativas aprobadas.
 
 **La asignación de responsabilidad y el inicio de atención son momentos distintos.** Otro operador no puede llamar ni iniciar el mismo folio por su cuenta; se impiden llamadas duplicadas y un segundo inicio simultáneo. Se mantiene la reasignación administrativa ya acordada si el responsable está desactivado, con motivo e historial.
 
 Desactivar una oficina no excluye sus pendientes de la cola conjunta ni impide atenderlos cuando el operador conserva la asignación activa; sigue impidiendo nuevos registros. No se llama automáticamente al siguiente: tras finalizar, el operador decide cuándo continuar sin una espera fija obligatoria. El tiempo transcurrido por sí solo no cierra ni deniega un folio.
 
-La [decisión 004](decisiones/004-cola-y-responsabilidad-de-folios.md) registra estos acuerdos aprobados; los folios y este flujo siguen pendientes de implementación.
+La [decisión 004](decisiones/004-cola-y-responsabilidad-de-folios.md) registra estos acuerdos aprobados; la [decisión 006](decisiones/006-disponibilidad-y-folio-actual-del-operador.md) registra disponibilidad y el máximo de un folio actual, aprobados el 11 de octubre de 2026. El registro inicial ya está implementado; llamado, disponibilidad y pausa todavía no están programados.
 
 ### Agregar información durante la atención
 
@@ -96,7 +98,7 @@ Tras finalizar, la nota queda disponible para consulta.
 2. Confirma la finalización.
 3. El sistema registra **Finalizado** y la fecha y hora de fin, conservando datos, notas e incidencias en el historial.
 
-No se selecciona Concretado / No concretado; lo ocurrido se describe en la nota.
+No se selecciona Concretado / No concretado; lo ocurrido se describe en la nota. Tras cerrar el folio actual, el operador queda Libre si no está en pausa; si está en pausa, sigue sin poder llamar.
 
 ### Consultar el historial
 
@@ -134,10 +136,14 @@ El operador no traslada folios desde Atención actual. El traslado no finaliza l
 ### Pausar y reanudar
 
 1. El operador solicita una pausa en cualquier momento, incluso con un folio Llamado o En atención, y registra el motivo.
-2. Su disponibilidad pasa a **En pausa**; el folio conserva su asignación al operador, estado y notas.
-3. Reanuda cuando lo decide, sin autorización administrativa.
+2. Su disponibilidad pasa a **En pausa** y no puede llamar, incluso sin folio actual; el folio conserva su responsabilidad, estado y notas.
+3. Reanuda cuando lo decide, sin autorización administrativa. Queda **Libre** si no tiene folio actual, u **Ocupado** si tiene uno en Llamado o En atención.
 
 Recepción consulta la pausa en Status. El administrador consulta operador, motivo, inicio, fin, duración, oficina y folio asociado en Registro de actividad. Los prototipos muestran separados el tiempo desde el inicio de atención y el tiempo de pausa.
+
+## Ambigüedades pendientes
+
+El significado funcional de Inactivo y el tratamiento de restauraciones o reasignaciones administrativas que pudieran producir un segundo folio actual siguen pendientes en la decisión 006. Este flujo no los resuelve ni cambia las excepciones administrativas aprobadas.
 
 ## Resumen del recorrido y su trazabilidad
 
