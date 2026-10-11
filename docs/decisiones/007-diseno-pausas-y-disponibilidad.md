@@ -2,7 +2,9 @@
 
 Fecha: **11 de octubre de 2026**.
 
-Estado: **diseño revisado; implementación y pruebas pendientes**.
+Estado: **primera entrega implementada y revisada en PostgreSQL de pruebas; aplicación local de `folios.0002` pendiente**.
+
+El diseño revisado se conserva como referencia de los contratos y propuestas técnicas. La [evidencia de implementación y pruebas](../pruebas/009-pausas-disponibilidad-postgresql.md) registra la validación posterior del 11 de octubre de 2026 y sus límites, sin atribuirle las evidencias de etapas anteriores.
 
 ## Autoridad y alcance
 
@@ -10,7 +12,7 @@ Los [acuerdos vigentes](../acuerdos-vigentes.md) son la fuente principal. La [de
 
 Se conservan los servicios y bloqueos de la [decisión 003](003-servicios-de-asignacion-y-actividad.md), la responsabilidad desde Llamado de la [decisión 004](004-cola-y-responsabilidad-de-folios.md) y el registro inicial implementado de la [decisión 005](005-registro-inicial-de-folios.md).
 
-**Esta primera entrega no cambia Folio ni EventoFolio**, sus restricciones, estados o eventos CREACION. No implementa llamado, inicio de atención, notas, cierre, correcciones administrativas ni pantallas. El diseño no está implementado y no tiene pruebas ejecutadas. Las evidencias anteriores de usuarios, asignaciones y registro inicial no verifican este diseño.
+**Esta primera entrega no cambia Folio ni EventoFolio**, sus restricciones, estados o eventos CREACION. No implementa llamado, inicio de atención, notas, cierre, correcciones administrativas ni pantallas. La revisión documental inicial no implementó código ni ejecutó pruebas; la implementación y validación posteriores se registran ahora por separado. Las evidencias anteriores de usuarios, asignaciones y registro inicial no verifican este diseño.
 
 ## Respaldo funcional y consultas por rol
 
@@ -210,7 +212,7 @@ Las claves foráneas protegidas y restricciones garantizan referencias existente
 | Nuevos archivos de pruebas de disponibilidad y concurrencia | Integración, restricciones, exposición por rol, solicitudes, rollback y bloqueos. |
 | Documentación nueva de resultados | Registrar ejecución futura y sus límites sin alterar evidencias anteriores. |
 
-La validación futura utilizará exclusivamente `config.settings_test_migrations`, base `test_atencion_catalogos_migraciones` y usuario `atencion_test`, con migraciones reales, `--keepdb --parallel 1 --noinput` y barreras de aislamiento existentes. No se usará la base normal ni se modificarán privilegios.
+La validación posterior utilizó exclusivamente `config.settings_test_migrations`, base `test_atencion_catalogos_migraciones` y usuario `atencion_test`, con conexión real verificada, migraciones reales, `--keepdb --parallel 1 --noinput` y barreras de aislamiento existentes. No se conectó la base normal ni se modificaron privilegios. Los casos reales de estados todavía no implementados conservan su verificación pendiente.
 
 Casos necesarios:
 
@@ -225,7 +227,17 @@ Casos necesarios:
 
 La consulta global debe conservarse por construcción sin condiciones de actividad de oficina o asignación. **Los casos reales de Ocupado y contexto desde Llamado se verificarán al integrar la segunda entrega. En atención y notas se verificarán cuando se implementen.** No se ampliará Folio ni se simulará esa implementación para declarar tales casos comprobados ahora.
 
-No se han ejecutado pruebas de esta primera entrega, generado migraciones ni modificado código o bases durante esta revisión documental.
+En la revisión documental inicial no se ejecutaron pruebas de esta primera entrega, no se generaron migraciones ni se modificaron código o bases. Esa evidencia se conserva y se distingue de la implementación posterior.
+
+## Implementación y validación posteriores
+
+Se implementaron los tres modelos, los servicios de consultas por rol, pausa y reanudación, la disponibilidad derivada y la persistencia conjunta de cambio, evento y comprobante. Se reutilizaron las barreras de `folios/managers.py` sin modificarlo; la migración nueva es `folios.0002_pausaoperador_eventodisponibilidad_solicitudoperador_and_more`, sin reescribir migraciones anteriores ni cambiar Folio o EventoFolio.
+
+El [registro 009](../pruebas/009-pausas-disponibilidad-postgresql.md) conserva comandos y resultados: **37 pruebas nuevas satisfactorias, incluidas 12 de concurrencia**, y **140 pruebas satisfactorias de la suite completa que incluyen esas 37**. La prueba de borrado asíncrono se corrigió antes de la ejecución final. `check`, correspondencia modelos/migraciones y formato fueron correctos.
+
+La inspección verificó 3 tablas nuevas, 22 columnas, 19 restricciones y 15 índices; quedaron **22 migraciones aplicadas en pruebas, ninguna pendiente**, y cero datos residuales de aplicación. Se corrigió una comparación del auxiliar dependiente del orden de columnas; no hubo diferencias de esquema. La revisión crítica posterior no encontró defectos, no modificó archivos ni ejecutó nuevas pruebas.
+
+**La aplicación local de `folios.0002` en `atencion_ciudadana` sigue pendiente.** Los casos reales de Ocupado y contexto desde Llamado se verificarán con la segunda entrega; En atención y notas se verificarán cuando se implementen. Los permisos ampliados y demás decisiones funcionales pendientes no se resolvieron durante la implementación.
 
 ## Pendientes y segunda entrega
 
