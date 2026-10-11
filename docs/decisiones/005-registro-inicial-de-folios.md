@@ -2,7 +2,7 @@
 
 Fecha de revisión: **10 de octubre de 2026**.
 
-Estado: **registro inicial implementado y revisado en PostgreSQL de pruebas; aplicación local de la migración pendiente**.
+Estado: **registro inicial implementado y revisado en PostgreSQL de pruebas; migración aplicada y verificada en PostgreSQL local**.
 
 ## Autoridad y alcance
 
@@ -10,7 +10,9 @@ Los [acuerdos vigentes](../acuerdos-vigentes.md), apartados «Recepción y regis
 
 Se reutilizan las referencias y conservación de registros de la [decisión 002](002-oficinas-tramites-y-asignaciones.md), y las transacciones, bloqueos y barreras de escritura de la [decisión 003](003-servicios-de-asignacion-y-actividad.md). Conforme a la [decisión 004](004-cola-y-responsabilidad-de-folios.md), registrar no asigna operador: la responsabilidad comienza al llamar, y el inicio de atención es un momento posterior.
 
-Los tipos, nombres de campos y representación interna siguientes son decisiones técnicas implementadas en `folios`. El [registro 007 de pruebas](../pruebas/007-registro-inicial-folios-postgresql.md) documenta la suite completa de **102 pruebas, incluidas 28 de folios, antes de la corrección del descriptor inverso**, y las **3 pruebas afectadas satisfactorias después**. La regresión falló antes de corregir y pasó después; no se repitió la suite completa ni se suman ambos conteos. En pruebas quedaron 21 migraciones aplicadas y sin pendientes, con 2 tablas nuevas, 18 columnas, 11 restricciones y 9 índices, sin datos residuales. `folios.0001_initial` sigue pendiente en `atencion_ciudadana`; esa base no se conectó en esta etapa. Las evidencias anteriores se conservan y no se atribuyen por sí solas a los folios.
+Los tipos, nombres de campos y representación interna siguientes son decisiones técnicas implementadas en `folios`. El [registro 007 de pruebas](../pruebas/007-registro-inicial-folios-postgresql.md) documenta la suite completa de **102 pruebas, incluidas 28 de folios, antes de la corrección del descriptor inverso**, y las **3 pruebas afectadas satisfactorias después**. La regresión falló antes de corregir y pasó después; no se repitió la suite completa ni se suman ambos conteos. En pruebas quedaron 21 migraciones aplicadas y sin pendientes, con 2 tablas nuevas, 18 columnas, 11 restricciones y 9 índices, sin datos residuales. Durante esa etapa de pruebas, `folios.0001_initial` todavía estaba pendiente en `atencion_ciudadana`; esa base no se conectó entonces. Las evidencias anteriores se conservan y no se atribuyen por sí solas a los folios.
+
+El **10 de octubre de 2026**, con Git limpio en el commit de código `2d690da` y conexión real `atencion_ciudadana / atencion_app` mediante `config.settings`, se aplicó `folios.0001_initial` tras comprobar 20 migraciones aplicadas y esa única pendiente. El SQL revisado fue coherente. Después quedaron **21 migraciones aplicadas y ninguna pendiente**, con `check` satisfactorio; la comprobación previa de modelos/migraciones no detectó diferencias. La inspección de lectura confirmó 2 tablas nuevas, 18 columnas, 11 restricciones y 9 índices, con cero filas en ambas tablas. La inspección inicial falló por comparar literalmente `varchar` y `character varying`; normalizados esos alias equivalentes, pasó sin diferencias de esquema. No se ejecutaron pruebas en la base normal, no se crearon datos ni se cambiaron permisos. El [registro 008 de aplicación local](../pruebas/008-migracion-folios-local.md) conserva comandos y resultados de esta etapa distinta, sin sustituir la evidencia de pruebas.
 
 ## Folio
 
