@@ -53,16 +53,36 @@ Se renderizaron las plantillas reales con `RequestFactory`, usuario ilustrativo 
 
 Firefox falló dentro del sandbox; las capturas se obtuvieron con la ejecución autorizada fuera del sandbox. HTML, perfiles y capturas están fuera del repositorio, en `/tmp/revision-recepcion-_h1wxfut/`. Esta revisión no inició sesión, no interactuó con controles ni registró una atención. No acredita funcionamiento de lector de pantalla, foco interactivo ni accesibilidad completa.
 
-## Comprobaciones finales de solo lectura
+## Comprobaciones finales de solo lectura de la etapa automatizada
 
 Se volvió a comprobar identidad real. Las **13 tablas** de aplicación con prefijos `usuarios_`, `oficinas_`, `tramites_`, `folios_`, más `django_session`, tenían **cero registros**; el conteo incluye las relaciones técnicas de Usuario. Los metadatos de Django se conservaron. Seguían **22 migraciones aplicadas y ninguna pendiente**.
 
-No se modificaron modelos, migraciones, servicios de negocio, autorización compartida ni barreras de escritura. No se generaron ni aplicaron migraciones, no se crearon cuentas en la base normal y no se hizo commit, push ni preparación del índice.
+Durante esa etapa no se modificaron modelos, migraciones, servicios de negocio, autorización compartida ni barreras de escritura. No se generaron ni aplicaron migraciones, no se crearon cuentas en la base normal y no se hizo commit, push ni preparación del índice. El conteo de cero registros corresponde a ese momento anterior a la preparación manual de datos DEMO.
 
-## Límite aprobado y revisión manual pendiente
+## Revisión manual realizada por el usuario — 12 de octubre de 2026
+
+El **12 de octubre de 2026**, el usuario revisó Nueva atención en **Linux Mint con Brave**, mediante el servidor **`127.0.0.1:8001`** y la base aislada **`test_atencion_catalogos_migraciones`**. Después de la etapa automatizada se prepararon una cuenta de Recepción y catálogos DEMO para esta revisión; el estado anterior sin fixtures no describe el entorno manual posterior.
+
+| Comprobación | Resultado y evidencia |
+| --- | --- |
+| Ingreso con rol `RECEPCION` | Apertura de Nueva atención. |
+| Selección manual de destino | Selección de oficina DEMO y trámite DEMO perteneciente a esa oficina. |
+| Registro con nombre proporcionado y contactos vacíos | Registro satisfactorio con nombre proporcionado y correo y teléfono vacíos. |
+| Confirmación | Muestra ciudadano, oficina, trámite, llegada, cuenta registradora y estado En espera. |
+| Recarga de confirmación | Conserva la dirección y la llegada, sin solicitar reenvío; confirmado por el usuario. |
+| Registrar otra atención | Regreso al formulario. |
+| Nombre vacío y correo inválido | Bloqueados por la validación del navegador; comprobados mediante capturas. |
+| Navegación con Tab y foco visible | Confirmados por el usuario. |
+| Ventana estrecha | Sin cortes; confirmado por el usuario. |
+
+Esta es evidencia manual comunicada por el usuario, distinta de las capturas ilustrativas previas de Firefox y de las **191 pruebas Django y 4 pruebas JavaScript satisfactorias** de la etapa automatizada. No se repitieron esas pruebas para documentar la revisión. Las capturas del bloqueo nativo acreditan la validación del navegador, sin atribuir a ese recorrido una comprobación adicional de rechazos en el servidor.
+
+La recarga se comprobó por el comportamiento observado de la página: **no se consultaron ni verificaron conteos de registros tras recargar**. No se incluyen credenciales, datos personales ni capturas externas. Esta actualización modifica únicamente documentación; no ejecuta pruebas, migraciones ni limpieza de datos.
+
+## Límite aprobado y comprobaciones manuales pendientes
 
 POST satisfactorio redirige a confirmación GET: recargar esa confirmación no registra. Deshabilitar el botón con JavaScript es una ayuda visual. **Dos POST válidos crean dos atenciones independientes**, con un evento CREACION por atención; no hay garantía durable contra reintentos ni deduplicación por datos del ciudadano.
 
-Pendientes manuales en Linux Mint con Brave: ingreso con RECEPCION, carga dependiente y alternativa ante fallo, flujo completo con JavaScript deshabilitado, teclado y foco, lector de pantalla, adaptación en ventana real, errores, registro y recarga de confirmación, propiedad de la confirmación y salida. La validación administrativa del registro 011 no acredita esta pantalla.
+Siguen pendientes el **flujo manual completo con JavaScript deshabilitado**, la alternativa de Cargar trámites ante fallo de carga, la protección frente a respuestas atrasadas en navegador, el lector de pantalla, errores del servidor en el recorrido manual, catálogos incompatibles o desactivados, propiedad de la confirmación con otra cuenta, permisos con otros roles o cambios de cuenta y la salida desde esta pantalla, así como las demás comprobaciones manuales todavía no realizadas. La selección DEMO no acredita por sí sola todos los casos de carga dependiente. La validación administrativa del registro 011 no sustituye estas comprobaciones.
 
-Para revisar con registro real se requiere un entorno aislado autorizado, una cuenta activa RECEPCION con contraseña utilizable y al menos una oficina activa con un trámite activo asociado. Para casos negativos convienen otra cuenta RECEPCION, cuentas de otros roles, otra oficina/trámite y catálogos inactivos. No se exige operador asignado. No se prepararon esos datos manuales ni se inspeccionó su existencia en la base normal; la base de pruebas quedó sin fixtures. El formato público de folio y las restantes pantallas y acciones siguen pendientes conforme a la decisión 010.
+Los datos DEMO se prepararon después de la etapa automatizada exclusivamente para la revisión en la base aislada; no se inspeccionó ni modificó la base normal. Para casos negativos convienen otra cuenta RECEPCION, cuentas de otros roles, otra oficina/trámite y catálogos inactivos. No se exige operador asignado. El formato público de folio y las restantes pantallas y acciones, incluidos llamado y reserva, siguen pendientes conforme a la decisión 010.
