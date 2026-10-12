@@ -1,8 +1,8 @@
 # Sistema de Flujo de Atención Ciudadana
 
-Reglas vigentes tras la revisión de los prototipos. Actualización: 11 de octubre de 2026.
+Reglas vigentes tras la revisión de los prototipos. Actualización: 12 de octubre de 2026.
 
-Este documento reúne las decisiones aprobadas para orientar la programación. Las revisiones visuales corresponden a los prototipos. El registro inicial de folios está implementado conforme a la [decisión 005](decisiones/005-registro-inicial-de-folios.md). Los recorridos posteriores y las pantallas siguen pendientes; llamado, disponibilidad y pausa todavía no están programados.
+Este documento reúne las decisiones aprobadas para orientar la programación. Las revisiones visuales corresponden a los prototipos. El registro inicial de folios está implementado conforme a la [decisión 005](decisiones/005-registro-inicial-de-folios.md), y Nueva atención de Recepción con confirmación propia conforme a la [decisión 010](decisiones/010-nueva-atencion-recepcion.md). Su revisión manual sigue pendiente. Los recorridos posteriores y las restantes pantallas siguen pendientes; llamado todavía no está programado. La primera entrega de pausas y disponibilidad está implementada en servicios conforme a la decisión 007, sin incorporar esas acciones en esta pantalla.
 
 ## Roles y acceso
 

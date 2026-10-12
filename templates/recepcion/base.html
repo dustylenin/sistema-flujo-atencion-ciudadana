@@ -1,0 +1,36 @@
+{% load static %}
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Nueva atención{% endblock %} · Atención ciudadana</title>
+  <link rel="stylesheet" href="{% static 'css/recepcion.css' %}">
+  {% block scripts %}{% endblock %}
+</head>
+<body>
+  <a class="saltar" href="#contenido">Ir al contenido</a>
+  <div class="estructura">
+    <aside class="lateral" aria-label="Recepción">
+      <div class="identidad"><span class="marca" aria-hidden="true">SF</span><strong>Atención<br>Ciudadana</strong></div>
+      <p class="submarca">Sistema de gestión</p>
+      <nav aria-label="Navegación de Recepción">
+        <p class="rol">Recepción</p>
+        <a class="nav-activa" href="{% url 'usuarios:recepcion' %}"{% block pagina_actual %}{% endblock %}>Nueva atención</a>
+      </nav>
+      <div class="sesion">
+        <p>Personal de recepción<br><strong>{{ user.get_username }}</strong></p>
+        <form method="post" action="{% url 'usuarios:logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="salir">Cerrar sesión</button>
+        </form>
+      </div>
+    </aside>
+    <div class="principal">
+      <header class="cabecera">Recepción <span aria-hidden="true">/</span> {% block ubicacion %}Nueva atención{% endblock %}</header>
+      <main id="contenido" tabindex="-1">{% block content %}{% endblock %}</main>
+      <footer>Sistema de Flujo de Atención Ciudadana</footer>
+    </div>
+  </div>
+</body>
+</html>

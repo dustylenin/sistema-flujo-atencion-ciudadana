@@ -1,0 +1,48 @@
+{% extends "recepcion/base.html" %}
+{% load static %}
+{% block scripts %}<script src="{% static 'js/recepcion.js' %}" defer></script>{% endblock %}
+{% block pagina_actual %} aria-current="page"{% endblock %}
+{% block content %}
+  <p class="ceja">Registro de ciudadanos</p>
+  <h1>Nueva atención</h1>
+  <p class="introduccion">Registra al ciudadano y selecciona la oficina que atenderá su trámite.</p>
+  <p class="obligatorios">Los campos marcados con * son obligatorios.</p>
+  {% if form.errors %}
+    <div class="error resumen" role="alert" tabindex="-1" id="errores">
+      <strong>Revisa los datos antes de registrar.</strong>
+      <ul>{% for field in form %}{% for error in field.errors %}<li><a href="#{{ field.id_for_label }}">{{ field.label }}: {{ error }}</a></li>{% endfor %}{% endfor %}</ul>
+      {{ form.non_field_errors }}
+    </div>
+  {% endif %}
+  {% if carga.errors %}<div class="error" role="alert" id="error-carga">{{ carga.oficina.errors }}</div>{% endif %}
+  {% if not hay_oficinas %}<p class="aviso" role="status">No hay oficinas con trámites disponibles para nuevos registros. Contacta al administrador.</p>{% endif %}
+  <form method="post" action="{% url 'usuarios:recepcion' %}" id="nueva-atencion" data-tramites-url="{% url 'usuarios:recepcion_tramites' %}">
+    {% csrf_token %}
+    <section class="tarjeta" aria-labelledby="titulo-ciudadano">
+      <h2 id="titulo-ciudadano"><span class="paso" aria-hidden="true">1</span> Datos del ciudadano</h2>
+      <p class="ayuda">El correo y el teléfono son opcionales.</p>
+      <div class="grupo">
+        <label for="{{ form.nombre_completo.id_for_label }}">Nombre completo <span aria-hidden="true">*</span></label>
+        {{ form.nombre_completo }}
+        <p id="ayuda-nombre_completo" class="ayuda">Escribe el nombre completo del ciudadano.</p>
+        <div id="error-nombre_completo">{{ form.nombre_completo.errors }}</div>
+      </div>
+      <div class="dos-columnas">
+        <div class="grupo"><label for="{{ form.correo.id_for_label }}">Correo electrónico <span class="opcional">Opcional</span></label>{{ form.correo }}<p id="ayuda-correo" class="ayuda">Puede quedar vacío.</p><div id="error-correo">{{ form.correo.errors }}</div></div>
+        <div class="grupo"><label for="{{ form.telefono.id_for_label }}">Teléfono <span class="opcional">Opcional</span></label>{{ form.telefono }}<p id="ayuda-telefono" class="ayuda">Puede quedar vacío.</p><div id="error-telefono">{{ form.telefono.errors }}</div></div>
+      </div>
+    </section>
+    <section class="tarjeta" aria-labelledby="titulo-destino">
+      <h2 id="titulo-destino"><span class="paso" aria-hidden="true">2</span> Destino de la atención</h2>
+      <p class="ayuda">Selecciona primero la oficina y después el trámite correspondiente.</p>
+      <div class="dos-columnas">
+        <div class="grupo"><label for="{{ form.oficina.id_for_label }}">Oficina <span aria-hidden="true">*</span></label>{{ form.oficina }}<p id="ayuda-oficina" class="ayuda">La oficina se elige manualmente según el criterio de Recepción.</p><div id="error-oficina">{{ form.oficina.errors }}</div></div>
+        <div class="grupo"><label for="{{ form.tramite.id_for_label }}">Trámite <span aria-hidden="true">*</span></label>{{ form.tramite }}<p id="ayuda-tramite" class="ayuda">Debe pertenecer a la oficina seleccionada.</p><div id="error-tramite">{{ form.tramite.errors }}</div></div>
+      </div>
+      <button class="boton secundario" type="submit" name="accion" value="cargar_tramites" formnovalidate>Cargar trámites</button>
+      <p id="estado-tramites" class="ayuda" role="status" aria-live="polite">{% if carga and not carga.errors %}Trámites actualizados. Selecciona el trámite antes de registrar.{% else %}Cargar trámites conserva la captura y no registra una atención.{% endif %}</p>
+    </section>
+    <p class="aviso">Al registrar, la atención quedará En espera y se conservará la fecha y hora de llegada.</p>
+    <div class="acciones"><a class="boton secundario" href="{% url 'usuarios:recepcion' %}">Limpiar formulario</a><button class="boton primario" type="submit" name="accion" value="registrar" id="registrar"{% if not hay_oficinas %} disabled{% endif %}>Registrar atención</button></div>
+  </form>
+{% endblock %}

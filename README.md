@@ -6,9 +6,11 @@ El sistema busca mantener un registro trazable desde la recepción hasta el resu
 
 ## Estado del proyecto
 
-**Etapa actual: inicio de sesión y acceso por rol implementados y comprobados en pruebas; revisión manual parcial realizada.** La [decisión 009](docs/decisiones/009-inicio-de-sesion-y-acceso-por-rol.md) describe login, logout POST con CSRF, autorización por cuenta activa y rol vigente, y los tres destinos mínimos. Pasaron **25 pruebas nuevas y la suite completa de 165 pruebas, que incluye esas 25**. Se conservan las capturas previas en Firefox. El **11 de octubre de 2026**, el usuario confirmó en **Linux Mint con Brave** mostrar/ocultar contraseña, Tab y foco visible, adaptación al reducir la ventana y error genérico con credenciales inválidas, conservando el usuario y vaciando la contraseña. Esta revisión manual se distingue de las pruebas automatizadas existentes, que no se repitieron. Siguen pendientes el ingreso con cuenta válida, destinos por rol y logout manual; no se declaran comprobados lector de pantalla ni funcionamiento manual sin JavaScript. Las evidencias constan en el [registro 011](docs/pruebas/011-inicio-de-sesion-y-acceso-postgresql.md).
+**Etapa actual: primera pantalla funcional de Recepción implementada y comprobada en pruebas aisladas; revisión manual pendiente.** La [decisión 010](docs/decisiones/010-nueva-atencion-recepcion.md) describe Nueva atención, selección manual de oficina/trámite activos, uso exclusivo de `registrar_folio`, confirmación propia y carga sin JavaScript. La regresión completa pasó con **191 pruebas, incluidas las 26 nuevas de Recepción**, y pasaron **4 pruebas de JavaScript**; los conteos corresponden a herramientas distintas. No se cambiaron modelos, servicios ni migraciones. El [registro 012](docs/pruebas/012-nueva-atencion-recepcion-postgresql.md) conserva resultados, revisión de capturas y límites. Recargar la confirmación no registra; **dos POST válidos generan atenciones independientes**, sin deduplicación por datos del ciudadano.
 
-El **siguiente orden de trabajo** es completar la revisión manual del acceso con cuenta válida, destinos por rol y logout, y después implementar la primera pantalla de recepción conectada al registro existente, para probar el registro visual. La implementación del llamado queda pendiente. Su [propuesta de la segunda entrega](docs/decisiones/008-diseno-llamado-y-reserva.md) conserva el estado de diseño revisado, con implementación y pruebas pendientes; todavía no se genera su migración.
+El acceso de la [decisión 009](docs/decisiones/009-inicio-de-sesion-y-acceso-por-rol.md) se conserva. El usuario confirmó el 11 de octubre de 2026 en Linux Mint con Brave contraseña visible/oculta, Tab, foco, adaptación y error genérico; el 12 de octubre validó ingreso de una cuenta activa ADMINISTRADOR, salida, protección sin sesión y reingreso. Administración sigue siendo una pantalla inicial. El [registro 011](docs/pruebas/011-inicio-de-sesion-y-acceso-postgresql.md) conserva esas evidencias, sin extenderlas a Recepción u Operador.
+
+El siguiente paso es revisar manualmente Nueva atención en un entorno aislado autorizado. Siguen pendientes pruebas manuales de otros roles, lector de pantalla y funcionamiento interactivo sin JavaScript. La implementación del llamado queda pendiente: su [propuesta](docs/decisiones/008-diseno-llamado-y-reserva.md) conserva el estado de diseño, sin generar su migración ni implementar reserva u otras acciones.
 
 La primera entrega de pausa, reanudación y disponibilidad está implementada, revisada en PostgreSQL de pruebas y con `folios.0002` aplicada y verificada localmente. Incluye consultas por rol, disponibilidad derivada y persistencia conjunta de pausa, evento y comprobante, con autorización vigente, solicitudes repetidas y barreras del ORM reutilizadas. Con `config.settings_test_migrations`, la conexión real confirmó `test_atencion_catalogos_migraciones` y `atencion_test`. Pasaron **37 pruebas nuevas, incluidas 12 de concurrencia, y la suite completa de 140 pruebas que incluye esas 37**; los conteos no se suman. `check`, correspondencia modelos/migraciones y formato fueron correctos. La inspección verificó 3 tablas nuevas, 22 columnas, 19 restricciones y 15 índices, **22 migraciones aplicadas sin pendientes en pruebas** y cero datos residuales de aplicación. La revisión crítica posterior no encontró defectos, no modificó archivos ni ejecutó nuevas pruebas. El [registro de pausas y disponibilidad](docs/pruebas/009-pausas-disponibilidad-postgresql.md) conserva comandos, correcciones previas, resultados y límites.
 
@@ -45,9 +47,9 @@ oficinas/        Catálogo, asignaciones, eventos, servicios y pruebas
 tramites/        Catálogo de trámites con oficina fija y pruebas
 folios/          Registro inicial, pausas, disponibilidad, eventos, servicios y pruebas
 docs/            Documentación del producto conservada
-templates/       Inicio de sesión y destinos mínimos por rol
-static/css/      Estilos institucionales responsivos de acceso
-static/js/       Mostrar/ocultar contraseña, opcional
+templates/       Acceso, Nueva atención, confirmación y destinos mínimos restantes
+static/css/      Estilos institucionales responsivos de acceso y Recepción
+static/js/       Mejoras opcionales de acceso y trámites dependientes; pruebas JS
 static/img/      Carpeta reservada para imágenes
 manage.py        Comandos de Django
 requirements.txt Dependencias del entorno
@@ -55,13 +57,25 @@ requirements.txt Dependencias del entorno
 .gitignore       Excluye entorno virtual, secretos y archivos generados
 ```
 
-`AUTH_USER_MODEL` apunta a `usuarios.Usuario`, basado en `AbstractUser`, conforme a la [decisión aprobada de usuarios y asignaciones](docs/decisiones/001-usuarios-y-asignaciones.md). Conserva `username` como identificador de acceso y los campos heredados. La autorización funcional de creación/reactivación de asignaciones está implementada en servicios; el acceso y los destinos mínimos ya existen. Las pantallas de trabajo y los demás permisos funcionales siguen pendientes.
+`AUTH_USER_MODEL` apunta a `usuarios.Usuario`, basado en `AbstractUser`, conforme a la [decisión aprobada de usuarios y asignaciones](docs/decisiones/001-usuarios-y-asignaciones.md). Conserva `username` como identificador de acceso y los campos heredados. La autorización funcional de creación/reactivación de asignaciones está implementada en servicios; el acceso y Nueva atención ya existen. Las restantes pantallas de trabajo y los demás permisos funcionales siguen pendientes.
 
 El campo `rol` es obligatorio, sin valor predeterminado, y admite `ADMINISTRADOR`, `RECEPCION` u `OPERADOR`. `create_user()` y `create_superuser()` exigen el argumento explícito `rol`; los valores vacíos o inválidos se rechazan antes de guardar. El guardado directo también valida el rol. En PostgreSQL ya se comprobaron `UNIQUE (username)`, `NOT NULL` de `rol` y la restricción `usuarios_usuario_rol_valido` para los tres roles, incluidos intentos mediante `update()` que omiten la validación de `save()`.
 
 `rol`, `is_active`, `is_staff` e `is_superuser` son independientes. El manager conserva el comportamiento técnico de Django al crear superusuarios, sin asignarles automáticamente el rol `ADMINISTRADOR`. El acceso implementado comprueba cuenta activa y rol vigente en cada petición; `is_staff` e `is_superuser` no conceden permisos funcionales. No se habilita el panel técnico de Django.
 
 `REQUIRED_FIELDS` conserva los campos de `AbstractUser` y añade `rol`: cuando se autorice usar `createsuperuser`, el modo interactivo solicitará el rol y el modo no interactivo requerirá `--rol` o `DJANGO_SUPERUSER_ROL`. Esto no crea una cuenta ahora ni habilita gestión de contraseñas. La creación de cuentas desde Usuarios y la gestión exclusiva de contraseñas por el administrador siguen pendientes de implementación.
+
+## Revisar Nueva atención en Linux Mint
+
+Para una prueba manual con registro real, preparar mediante una acción autorizada una cuenta activa de rol `RECEPCION` con contraseña utilizable y una oficina activa con un trámite activo asociado, en un entorno aislado. No se necesita operador asignado. Esta entrega no creó datos manuales: los fixtures de pruebas se limpiaron y no se inspeccionó la base normal. La gestión de cuentas y catálogos mediante pantallas todavía no está implementada.
+
+Con la base aislada y su configuración ya preparadas, se puede servir:
+
+```bash
+DJANGO_DEBUG=true .venv/bin/python -B manage.py runserver 127.0.0.1:8000 --settings=config.settings_test_migrations
+```
+
+Abrir `http://127.0.0.1:8000/acceso/` en Brave; entrar con RECEPCION lleva a `/recepcion/`. Probar carga, validaciones, registro y recarga de confirmación; repetir con JavaScript deshabilitado. Otra cuenta de Recepción no debe abrir esa confirmación. Este comando sirve la configuración aislada, sin ejecutar migraciones; cada registro válido sí escribe en esa base. Evitar ejecutar la suite mientras se realiza la revisión manual, pues limpia los datos de pruebas. Las capturas ilustrativas y comprobaciones automatizadas no sustituyen estos pasos.
 
 ## Abrir el inicio de sesión en Linux Mint
 

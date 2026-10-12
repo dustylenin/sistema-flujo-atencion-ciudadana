@@ -1,0 +1,20 @@
+{% extends "recepcion/base.html" %}
+{% block title %}Atención registrada{% endblock %}
+{% block ubicacion %}Atención registrada{% endblock %}
+{% block content %}
+  <p class="ceja">Registro completado</p>
+  <h1>Atención registrada</h1>
+  <p class="aviso exito" role="status">El registro se guardó correctamente. La atención está En espera.</p>
+  <section class="tarjeta" aria-labelledby="titulo-confirmacion">
+    <h2 id="titulo-confirmacion">Confirmación del registro</h2>
+    <dl class="confirmacion">
+      <div><dt>Ciudadano</dt><dd>{{ folio.nombre_completo }}</dd></div>
+      <div><dt>Oficina</dt><dd>{{ folio.oficina.nombre }}</dd></div>
+      <div><dt>Trámite</dt><dd>{{ folio.tramite.nombre }}</dd></div>
+      <div><dt>Fecha y hora de llegada</dt><dd>{{ folio.llegada_original|date:"d/m/Y H:i:s T" }}</dd></div>
+      <div><dt>Estado</dt><dd><span class="estado">{{ folio.get_estado_display }}</span></dd></div>
+      <div><dt>Registrado por</dt><dd>{{ folio.registrado_por.get_username }}</dd></div>
+    </dl>
+  </section>
+  <a class="boton primario" href="{% url 'usuarios:recepcion' %}">Registrar otra atención</a>
+{% endblock %}

@@ -258,11 +258,12 @@ class AccesoTests(CatalogosPostgreSQLTestCase):
         self.assertFalse(Session.objects.filter(session_key=original).exists())
         self.assertNotIn(SESSION_KEY, self.client.session)
 
-    def test_destinos_muestran_solo_identidad_y_salida(self):
+    def test_recepcion_conserva_identidad_y_salida_sin_acciones_de_operador(self):
         self.entrar()
         response = self.client.get("/recepcion/")
         self.assertContains(response, self.cuentas[Usuario.Rol.RECEPCION].username)
         self.assertContains(response, 'method="post" action="/salir/"')
+        self.assertContains(response, "Nueva atención")
         self.assertNotContains(response, self.cuentas[Usuario.Rol.ADMINISTRADOR].username)
         self.assertNotContains(response, "Registrar folio")
         self.assertNotContains(response, "Llamar siguiente")
