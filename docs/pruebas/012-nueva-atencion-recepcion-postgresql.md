@@ -79,10 +79,20 @@ Esta es evidencia manual comunicada por el usuario, distinta de las capturas ilu
 
 La recarga se comprobó por el comportamiento observado de la página: **no se consultaron ni verificaron conteos de registros tras recargar**. No se incluyen credenciales, datos personales ni capturas externas. Esta actualización modifica únicamente documentación; no ejecuta pruebas, migraciones ni limpieza de datos.
 
+### Prueba manual sin JavaScript — 12 de octubre de 2026
+
+El **12 de octubre de 2026**, el usuario realizó el recorrido sin JavaScript en **Linux Mint con Brave**, en **`127.0.0.1:8001`** y la base aislada **`test_atencion_catalogos_migraciones`**. Desactivó JavaScript mediante **DevTools** y mantuvo las herramientas abiertas durante la prueba.
+
+- **Cargar trámites** permitió seleccionar el trámite DEMO de la oficina DEMO y conservó el nombre previamente capturado; comprobado mediante captura.
+- El registro fue satisfactorio con correo y teléfono opcionales vacíos.
+- La confirmación mostró el nombre de prueba, oficina, trámite, llegada, cuenta registradora y estado **En espera**; comprobada mediante captura.
+
+Se marca como realizada la prueba manual del registro sin JavaScript, limitada a este recorrido comunicado por el usuario. Esta evidencia se distingue de las **191 pruebas Django y 4 pruebas JavaScript satisfactorias** anteriores, que no se repitieron. No se afirman conteos de registros ni verificaciones adicionales de base de datos, y no se incorporan contraseñas, valores personales ni capturas externas. La prueba no acredita la alternativa ante un fallo de carga con JavaScript habilitado ni otras comprobaciones pendientes.
+
 ## Límite aprobado y comprobaciones manuales pendientes
 
 POST satisfactorio redirige a confirmación GET: recargar esa confirmación no registra. Deshabilitar el botón con JavaScript es una ayuda visual. **Dos POST válidos crean dos atenciones independientes**, con un evento CREACION por atención; no hay garantía durable contra reintentos ni deduplicación por datos del ciudadano.
 
-Siguen pendientes el **flujo manual completo con JavaScript deshabilitado**, la alternativa de Cargar trámites ante fallo de carga, la protección frente a respuestas atrasadas en navegador, el lector de pantalla, errores del servidor en el recorrido manual, catálogos incompatibles o desactivados, propiedad de la confirmación con otra cuenta, permisos con otros roles o cambios de cuenta y la salida desde esta pantalla, así como las demás comprobaciones manuales todavía no realizadas. La selección DEMO no acredita por sí sola todos los casos de carga dependiente. La validación administrativa del registro 011 no sustituye estas comprobaciones.
+Siguen pendientes la alternativa de Cargar trámites ante fallo de carga, la protección frente a respuestas atrasadas en navegador, el lector de pantalla, errores del servidor en el recorrido manual, catálogos incompatibles o desactivados, propiedad de la confirmación con otra cuenta, permisos con otros roles o cambios de cuenta y la salida desde esta pantalla, así como las demás comprobaciones manuales todavía no realizadas. La selección DEMO no acredita por sí sola todos los casos de carga dependiente. La validación administrativa del registro 011 no sustituye estas comprobaciones.
 
 Los datos DEMO se prepararon después de la etapa automatizada exclusivamente para la revisión en la base aislada; no se inspeccionó ni modificó la base normal. Para casos negativos convienen otra cuenta RECEPCION, cuentas de otros roles, otra oficina/trámite y catálogos inactivos. No se exige operador asignado. El formato público de folio y las restantes pantallas y acciones, incluidos llamado y reserva, siguen pendientes conforme a la decisión 010.
