@@ -428,10 +428,14 @@ class DisponibilidadTests(DisponibilidadFixturesMixin, CatalogosPostgreSQLTestCa
         self.assert_rechazo_postgresql(
             lambda: models.Model.save(duplicate, force_insert=True), "23505", "folios_solicitud_operador_unica",
         )
-        for field in ("operador_id", "solicitud_id", "operacion", "resultado", "pausa_resultado_id", "confirmada_en"):
+        for field in ("operador_id", "solicitud_id", "operacion", "resultado", "confirmada_en"):
             self.assert_rechazo_postgresql(
                 lambda: self.escribir_sql(Solicitud._meta.db_table, field, None, original.pk), "23502",
             )
+        self.assert_rechazo_postgresql(
+            lambda: self.escribir_sql(Solicitud._meta.db_table, "pausa_resultado_id", None, original.pk),
+            "23514", "folios_solicitud_campos_coherentes",
+        )
         for field in ("operador_id", "pausa_resultado_id", "evento_resultado_id"):
             self.assert_rechazo_postgresql(
                 lambda: self.escribir_sql(Solicitud._meta.db_table, field, 99999, original.pk), "23503",

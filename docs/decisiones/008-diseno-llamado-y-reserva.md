@@ -2,7 +2,7 @@
 
 Fecha de revisión: **11 de octubre de 2026**.
 
-Estado: **diseño revisado; implementación y pruebas pendientes**.
+Estado actualizado al **12 de octubre de 2026**: **servicio y modelos verificados, migración aplicada exclusivamente en la base aislada y datos DEMO recuperados**. El diseño revisado se conserva como referencia técnica. La [validación 014](../pruebas/014-validacion-llamado-y-reserva-postgresql.md) registra las ejecuciones posteriores a la preparación descrita abajo.
 
 Código contrastado en la revisión del 11 de octubre: **`df626ce`** (`df626ce981be3739aaa7bb90d75280d8c92e09c0`), con `main` limpio y sincronizado con `origin/main`.
 
@@ -15,6 +15,24 @@ El siguiente orden de trabajo será **servicio y modelos con sus pruebas; revisi
 **Antes de ejecutar pruebas debe resolverse la conservación de los datos DEMO presentes en la base aislada `test_atencion_catalogos_migraciones`**, utilizada para la revisión manual. No se presupone que esté vacía ni se autoriza su limpieza mediante esta nota. No se implementó código, ejecutaron pruebas o migraciones, ni se conectaron o limpiaron bases durante esta revisión documental.
 
 Se mantienen las decisiones todavía pendientes descritas al final del documento y el formato público del folio pendiente conforme a la decisión 005. Se conserva la distinción entre el rol funcional **`ADMINISTRADOR`** y los flags técnicos **`is_staff` e `is_superuser`**: estos no conceden por sí solos autorización funcional ni sustituyen el rol `OPERADOR` requerido para llamar.
+
+## Preparación de código — 12 de octubre de 2026
+
+Después de la revisión de compatibilidad se prepararon `llamar_siguiente`, las ampliaciones de Folio, EventoFolio y SolicitudOperador y la extracción de clave, búsqueda y comparación de comprobantes en `folios/solicitudes.py`. Pausa/reanudación conservan sus contratos y persistencia específica; `registrar_folio`, las barreras públicas, usuarios, asignaciones y Recepción no se modificaron. Se mantiene la selección por llegada original y UUID, los bloqueos ordenados sin `skip_locked`, el máximo global y la confirmación atómica de reserva, evento y solicitud. Solo se añade LLAMADO a los estados admitidos del modelo; EN_ATENCION permanece fuera de los choices y del CHECK.
+
+La migración completa [0003_llamado_y_reserva](../../folios/migrations/0003_llamado_y_reserva.py) está generada, **sin aplicar**. Se prepararon **51 pruebas nuevas**, incluidas 20 de concurrencia y una de conservación histórica mediante migración; **ninguna fue ejecutada**. Se ajustaron las expectativas de restricciones anteriores. El [registro 013](../pruebas/013-preparacion-llamado-y-reserva.md) detalla respaldo, SQL, plan y comprobaciones de solo lectura; no atribuye pruebas previas a esta entrega.
+
+Antes de editar se confirmó la conexión real `test_atencion_catalogos_migraciones / atencion_test`, 22 migraciones aplicadas y ninguna pendiente, y se obtuvo un respaldo completo privado fuera del repositorio. `pg_restore` pudo listar y leer el archivo, **sin probar una restauración**. Después, el plan muestra únicamente folios.0003 pendiente. No se ejecutó `migrate`, runner, restauración ni limpieza, ni se conectó la base normal. La revisión DEMO y la ejecución posterior de pruebas siguen requiriendo coordinación: disponer del respaldo no demuestra su restauración ni autoriza limpiar datos.
+
+El código preparado requiere el esquema de folios.0003 para ejecutar llamado y los guardados que usan los campos nuevos. Todavía no se habilitan rutas o pantallas de Operador, inicio, finalización ni correcciones administrativas. La revisión técnica del SQL no sustituye su aplicación y verificación real posterior.
+
+## Validación aislada — 12 de octubre de 2026
+
+Tras revisar 0003, SQL y plan, se confirmó 8001 detenido, identidad real `test_atencion_catalogos_migraciones / atencion_test`, 22 migraciones y solo 0003 pendiente. Se verificó la correspondencia del respaldo con los datos y secuencias actuales y se preparó un manifiesto privado y recuperación antes de escribir. Se aplicó 0003 en esa base y se comprobaron restricciones, índices y conservación histórica: **23 migraciones y ninguna pendiente**.
+
+Pasaron **51 pruebas nuevas** (30 funcionales, 20 de concurrencia y una de migración), después **242 pruebas de regresión completa que incluyen esas 51**, y **4 pruebas JavaScript** de Recepción. No fueron necesarias correcciones de código o pruebas; la migración aplicada no se reescribió. `check`, correspondencia modelos/migraciones y formato resultaron correctos.
+
+Los datos DEMO se recuperaron transaccionalmente sobre el esquema de 0003, excluyendo tabla y secuencia de migraciones. Se verificaron conteos/huellas de 17 tablas, próxima asignación de 15 secuencias, integridad referencial y conservación del historial de migraciones. El servidor 8001 sigue detenido. El [registro 014](../pruebas/014-validacion-llamado-y-reserva-postgresql.md) conserva comandos, resultados y dos ajustes del auxiliar temporal de comparación de zonas horarias; no se conectó ni migró la base normal ni se hizo commit/push. Las secciones anteriores documentan la preparación previa, cuando migración, runner y recuperación aún no estaban ejecutados.
 
 ## Autoridad y alcance
 
@@ -289,4 +307,4 @@ Permanecen pendientes permisos ampliados, presentación de pausas sin oficina y 
 
 En atención y notas conservan su verificación pendiente. Inicio, cierre, pantallas y correcciones administrativas quedan fuera de esta entrega. El llamado permitirá reservar y pausar el folio, pero no completar su atención ni liberar al operador mediante un cierre funcional.
 
-El orden vigente es el registrado en la revisión de compatibilidad del **12 de octubre de 2026**: **servicio y modelos con pruebas; revisión y verificación de migración; después lecturas autorizadas y pantallas de Operador**. Antes de ejecutar pruebas debe resolverse la conservación de los datos DEMO de la base aislada. **La implementación del llamado y la reserva queda pendiente**, junto con sus pruebas y migración.
+El orden vigente es el registrado en la revisión de compatibilidad del **12 de octubre de 2026**: **servicio y modelos con pruebas; revisión y verificación de migración; después lecturas autorizadas y pantallas de Operador**. Servicio, modelos, pruebas y migración ya están verificados en la base aislada conforme al registro 014, con datos DEMO recuperados sobre el esquema nuevo. El cierre guarda esta entrega sin iniciar otra etapa; las lecturas adicionales y pantallas de Operador son el punto pendiente para retomar. Antes de otra ejecución del runner debe repetirse la conservación: DEMO vuelve a estar presente. La recuperación selectiva realizada no acredita una restauración completa del esquema antiguo.

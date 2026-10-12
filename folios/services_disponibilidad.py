@@ -18,6 +18,7 @@ from django.utils import timezone
 from oficinas.models import Oficina
 
 from .models import EventoDisponibilidad, Folio, PausaOperador, SolicitudOperador
+from .solicitudes import buscar_solicitud, clave_solicitud as _clave_solicitud
 
 
 class Disponibilidad(StrEnum):
@@ -94,18 +95,9 @@ def _id_positivo(value, campo):
     return value
 
 
-def _clave_solicitud(value):
-    if not isinstance(value, (str, UUID)):
-        raise ValidationError({"solicitud_id": "Se requiere un UUID válido."})
-    try:
-        return UUID(value) if isinstance(value, str) else value
-    except ValueError as error:
-        raise ValidationError({"solicitud_id": "Se requiere un UUID válido."}) from error
-
-
 def _folios_actuales(using, operador_id):
     # Global: no depende de actividad de oficinas, trámites o asignaciones.
-    # Estos literales no habilitan estados todavía rechazados por Folio.
+    # EN_ATENCION sigue sin habilitarse en los choices ni el CHECK de Folio.
     return Folio.objects.using(using).filter(
         operador_responsable_id=operador_id, estado__in=["LLAMADO", "EN_ATENCION"],
     ).order_by("pk")
@@ -229,15 +221,12 @@ def _resultado(solicitud, *, repetida):
 
 
 def _repetida(*, operador, clave, operacion, motivo, pausa_id, using):
-    solicitud = SolicitudOperador.objects.using(using).filter(
-        operador=operador, solicitud_id=clave,
-    ).first()
+    solicitud = buscar_solicitud(
+        operador=operador, clave=clave, operacion=operacion,
+        motivo=motivo, pausa_id=pausa_id, using=using,
+    )
     if solicitud is None:
         return None
-    if (solicitud.operacion, solicitud.motivo_solicitado, solicitud.pausa_objetivo_id) != (
-        operacion, motivo, pausa_id,
-    ):
-        raise ValidationError({"solicitud_id": "Esta clave ya confirmó argumentos diferentes."})
     return _resultado(solicitud, repetida=True)
 
 

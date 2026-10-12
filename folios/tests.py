@@ -193,7 +193,7 @@ class RegistroFolioTests(FolioFixturesMixin, CatalogosPostgreSQLTestCase):
                              ("operador_responsable_id", self.actor.pk)):
             self.assert_rechazo_postgresql(
                 lambda: self.actualizar_sql("folios_folio", field, value, folio.pk),
-                "23514", "folios_folio_estado_inicial",
+                "23514", "folios_folio_estado_responsable",
             )
 
     def test_not_null_y_referencias_de_folio(self):
@@ -216,7 +216,7 @@ class RegistroFolioTests(FolioFixturesMixin, CatalogosPostgreSQLTestCase):
             ("estado_anterior", "EN_ESPERA", "23514"), ("estado_anterior", "", "23514"),
             ("estado_nuevo", "LLAMADO", "23514"), ("estado_nuevo", "", "23514"),
             ("estado_nuevo", None, "23502"), ("fecha", None, "23502"),
-            ("datos_iniciales", None, "23502"), ("folio_id", None, "23502"),
+            ("datos_iniciales", None, "23514"), ("folio_id", None, "23502"),
             ("actor_id", None, "23502"), ("actor_id", -1, "23503"),
         ):
             with self.subTest(field=field, value=value):

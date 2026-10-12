@@ -36,6 +36,7 @@ class RegistroFolioServicio(models.Model):
 class Folio(RegistroFolioServicio):
     class Estado(models.TextChoices):
         EN_ESPERA = "EN_ESPERA", "En espera"
+        LLAMADO = "LLAMADO", "Llamado"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     nombre_completo = models.TextField(validators=[validar_nombre_completo])
@@ -64,10 +65,23 @@ class Folio(RegistroFolioServicio):
                 condition=models.Q(nombre_completo__regex=r"\S"),
                 name="folios_folio_nombre_con_contenido",
             ),
-            # Solo esta entrega: el llamado requerirá una nueva migración.
             models.CheckConstraint(
-                condition=models.Q(estado="EN_ESPERA", operador_responsable__isnull=True),
-                name="folios_folio_estado_inicial",
+                condition=(
+                    models.Q(estado="EN_ESPERA", operador_responsable__isnull=True)
+                    | models.Q(estado="LLAMADO", operador_responsable__isnull=False)
+                ),
+                name="folios_folio_estado_responsable",
+            ),
+            models.UniqueConstraint(
+                fields=["operador_responsable"],
+                condition=models.Q(estado__in=["LLAMADO", "EN_ATENCION"]),
+                name="folios_folio_actual_unico",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["oficina", "llegada_original", "id"],
+                condition=models.Q(estado="EN_ESPERA"), name="folios_cola_en_espera",
             ),
         ]
 
@@ -75,6 +89,7 @@ class Folio(RegistroFolioServicio):
 class EventoFolio(RegistroFolioServicio):
     class Operacion(models.TextChoices):
         CREACION = "CREACION", "Creación"
+        LLAMADO = "LLAMADO", "Llamado"
 
     folio = FoliosForeignKey(Folio, on_delete=models.PROTECT, related_name="eventos")
     actor = FoliosForeignKey(
@@ -84,16 +99,34 @@ class EventoFolio(RegistroFolioServicio):
     operacion = models.CharField(max_length=12, choices=Operacion.choices)
     estado_anterior = models.CharField(max_length=12, null=True)
     estado_nuevo = models.CharField(max_length=12)
-    datos_iniciales = models.JSONField()
+    datos_iniciales = models.JSONField(null=True, blank=True)
+    operador_responsable = FoliosForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, blank=True,
+        related_name="eventos_llamado_responsable",
+    )
+    asignacion_autorizante = FoliosForeignKey(
+        "oficinas.AsignacionOperadorOficina", on_delete=models.PROTECT, null=True, blank=True,
+        related_name="eventos_llamado",
+    )
 
     class Meta(RegistroFolioServicio.Meta):
         abstract = False
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(
-                    operacion="CREACION", estado_anterior__isnull=True, estado_nuevo="EN_ESPERA"
+                condition=(
+                    models.Q(
+                        operacion="CREACION", estado_anterior__isnull=True, estado_nuevo="EN_ESPERA",
+                        datos_iniciales__isnull=False, operador_responsable__isnull=True,
+                        asignacion_autorizante__isnull=True,
+                    )
+                    | models.Q(
+                        operacion="LLAMADO", estado_anterior__isnull=False,
+                        estado_anterior="EN_ESPERA", estado_nuevo="LLAMADO",
+                        datos_iniciales__isnull=True, operador_responsable__isnull=False,
+                        asignacion_autorizante__isnull=False, actor=models.F("operador_responsable"),
+                    )
                 ),
-                name="folios_evento_estados_creacion",
+                name="folios_evento_campos_coherentes",
             ),
             models.UniqueConstraint(
                 fields=["folio"], condition=models.Q(operacion="CREACION"),
@@ -175,12 +208,18 @@ class SolicitudOperador(RegistroFolioServicio):
     class Operacion(models.TextChoices):
         PAUSAR = "PAUSAR", "Pausar"
         REANUDAR = "REANUDAR", "Reanudar"
+        LLAMAR = "LLAMAR", "Llamar"
 
     class Resultado(models.TextChoices):
         PAUSADA = "PAUSADA", "Pausada"
         YA_EN_PAUSA = "YA_EN_PAUSA", "Ya en pausa"
         REANUDADA = "REANUDADA", "Reanudada"
         YA_REANUDADA = "YA_REANUDADA", "Ya reanudada"
+        EN_PAUSA = "EN_PAUSA", "En pausa"
+        OCUPADO = "OCUPADO", "Ocupado"
+        SIN_ASIGNACIONES = "SIN_ASIGNACIONES", "Sin asignaciones"
+        SIN_PENDIENTES = "SIN_PENDIENTES", "Sin pendientes"
+        LLAMADO = "LLAMADO", "Llamado"
 
     operador = FoliosForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="solicitudes_operador"
@@ -194,11 +233,19 @@ class SolicitudOperador(RegistroFolioServicio):
     )
     resultado = models.CharField(max_length=16, choices=Resultado.choices)
     pausa_resultado = FoliosForeignKey(
-        PausaOperador, on_delete=models.PROTECT, related_name="solicitudes_resultado"
+        PausaOperador, on_delete=models.PROTECT, null=True, blank=True,
+        related_name="solicitudes_resultado",
     )
     evento_resultado = FoliosForeignKey(
         EventoDisponibilidad, on_delete=models.PROTECT, null=True, blank=True,
         related_name="solicitudes_resultado",
+    )
+    folio_resultado = FoliosForeignKey(
+        Folio, on_delete=models.PROTECT, null=True, blank=True, related_name="solicitudes_llamado",
+    )
+    evento_folio_resultado = FoliosForeignKey(
+        EventoFolio, on_delete=models.PROTECT, null=True, blank=True,
+        related_name="solicitudes_llamado",
     )
     confirmada_en = models.DateTimeField(editable=False)
 
@@ -211,22 +258,45 @@ class SolicitudOperador(RegistroFolioServicio):
             models.CheckConstraint(
                 condition=(
                     (
-                        models.Q(
-                            operacion="PAUSAR", motivo_solicitado__isnull=False,
-                            motivo_solicitado__regex=r"\S", pausa_objetivo__isnull=True,
-                            resultado__in=["PAUSADA", "YA_EN_PAUSA"],
+                        (
+                            models.Q(
+                                operacion="PAUSAR", motivo_solicitado__isnull=False,
+                                motivo_solicitado__regex=r"\S", pausa_objetivo__isnull=True,
+                                resultado__in=["PAUSADA", "YA_EN_PAUSA"],
+                            )
+                            | models.Q(
+                                operacion="REANUDAR", motivo_solicitado__isnull=True,
+                                pausa_objetivo__isnull=False,
+                                pausa_objetivo=models.F("pausa_resultado"),
+                                resultado__in=["REANUDADA", "YA_REANUDADA"],
+                            )
                         )
-                        | models.Q(
-                            operacion="REANUDAR", motivo_solicitado__isnull=True,
-                            pausa_objetivo__isnull=False,
-                            pausa_objetivo=models.F("pausa_resultado"),
-                            resultado__in=["REANUDADA", "YA_REANUDADA"],
+                        & models.Q(
+                            pausa_resultado__isnull=False, folio_resultado__isnull=True,
+                            evento_folio_resultado__isnull=True,
+                        )
+                        & (
+                            models.Q(resultado__in=["PAUSADA", "REANUDADA"], evento_resultado__isnull=False)
+                            | models.Q(
+                                resultado__in=["YA_EN_PAUSA", "YA_REANUDADA"], evento_resultado__isnull=True,
+                            )
                         )
                     )
-                    & (
-                        models.Q(resultado__in=["PAUSADA", "REANUDADA"], evento_resultado__isnull=False)
-                        | models.Q(
-                            resultado__in=["YA_EN_PAUSA", "YA_REANUDADA"], evento_resultado__isnull=True,
+                    | (
+                        models.Q(
+                            operacion="LLAMAR", motivo_solicitado__isnull=True,
+                            pausa_objetivo__isnull=True, pausa_resultado__isnull=True,
+                            evento_resultado__isnull=True,
+                        )
+                        & (
+                            models.Q(
+                                resultado="LLAMADO", folio_resultado__isnull=False,
+                                evento_folio_resultado__isnull=False,
+                            )
+                            | models.Q(
+                                resultado__in=["EN_PAUSA", "OCUPADO", "SIN_ASIGNACIONES", "SIN_PENDIENTES"],
+                                folio_resultado__isnull=True, evento_folio_resultado__isnull=True,
+                            )
                         )
                     )
                 ),
