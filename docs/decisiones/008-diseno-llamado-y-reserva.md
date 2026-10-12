@@ -4,7 +4,17 @@ Fecha de revisión: **11 de octubre de 2026**.
 
 Estado: **diseño revisado; implementación y pruebas pendientes**.
 
-Código contrastado: **`df626ce`** (`df626ce981be3739aaa7bb90d75280d8c92e09c0`), con `main` limpio y sincronizado con `origin/main`.
+Código contrastado en la revisión del 11 de octubre: **`df626ce`** (`df626ce981be3739aaa7bb90d75280d8c92e09c0`), con `main` limpio y sincronizado con `origin/main`.
+
+## Revisión de compatibilidad — 12 de octubre de 2026
+
+El diseño sigue siendo compatible con el código actual después de implementar el acceso de la [decisión 009](009-inicio-de-sesion-y-acceso-por-rol.md) y Nueva atención de Recepción de la [decisión 010](010-nueva-atencion-recepcion.md). El núcleo de usuarios, asignaciones, folios y pausas conserva la base contrastada en la revisión anterior. **El llamado y la reserva siguen pendientes de implementación**, junto con sus pruebas y migración; esta revisión no modifica el diseño técnico ni replantea acuerdos funcionales cerrados.
+
+El siguiente orden de trabajo será **servicio y modelos con sus pruebas; revisión y verificación de la migración; después lecturas autorizadas y pantallas de Operador**. Sustituye la planificación anterior que priorizaba acceso y la primera pantalla de Recepción.
+
+**Antes de ejecutar pruebas debe resolverse la conservación de los datos DEMO presentes en la base aislada `test_atencion_catalogos_migraciones`**, utilizada para la revisión manual. No se presupone que esté vacía ni se autoriza su limpieza mediante esta nota. No se implementó código, ejecutaron pruebas o migraciones, ni se conectaron o limpiaron bases durante esta revisión documental.
+
+Se mantienen las decisiones todavía pendientes descritas al final del documento y el formato público del folio pendiente conforme a la decisión 005. Se conserva la distinción entre el rol funcional **`ADMINISTRADOR`** y los flags técnicos **`is_staff` e `is_superuser`**: estos no conceden por sí solos autorización funcional ni sustituyen el rol `OPERADOR` requerido para llamar.
 
 ## Autoridad y alcance
 
@@ -279,4 +289,4 @@ Permanecen pendientes permisos ampliados, presentación de pausas sin oficina y 
 
 En atención y notas conservan su verificación pendiente. Inicio, cierre, pantallas y correcciones administrativas quedan fuera de esta entrega. El llamado permitirá reservar y pausar el folio, pero no completar su atención ni liberar al operador mediante un cierre funcional.
 
-El siguiente orden de trabajo es **revisar inicio de sesión y acceso por rol**, y después **la primera pantalla de recepción para probar el registro visual**. Ese trabajo posterior no se realiza aquí. **La implementación del llamado queda pendiente**, junto con sus pruebas y migración.
+El orden vigente es el registrado en la revisión de compatibilidad del **12 de octubre de 2026**: **servicio y modelos con pruebas; revisión y verificación de migración; después lecturas autorizadas y pantallas de Operador**. Antes de ejecutar pruebas debe resolverse la conservación de los datos DEMO de la base aislada. **La implementación del llamado y la reserva queda pendiente**, junto con sus pruebas y migración.
