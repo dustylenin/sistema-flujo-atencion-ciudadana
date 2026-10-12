@@ -72,8 +72,21 @@ El **11 de octubre de 2026**, el usuario realizó una revisión interactiva en *
 
 Estos resultados son la revisión manual comunicada por el usuario, distinta de las capturas previas de Firefox y de las **165 pruebas automatizadas existentes, que incluyen las 25 nuevas**. No se repitieron pruebas automatizadas para registrar esta revisión ni se modificó su conteo. Esta actualización modifica únicamente documentación; no crea cuentas ni conecta bases.
 
+### Validación manual de acceso administrador — 12 de octubre de 2026
+
+El **12 de octubre de 2026**, el usuario realizó la validación en **Linux Mint con Brave**:
+
+| Comprobación | Resultado y evidencia |
+| --- | --- |
+| Inicio de sesión válido con una cuenta activa de rol `ADMINISTRADOR` | Llegada a `/administracion/`, confirmada mediante captura. |
+| Cerrar sesión | Regresa al inicio de sesión; confirmado por el usuario. |
+| Abrir `/administracion/` sin sesión | Exige autenticación; confirmado por el usuario. |
+| Volver a iniciar sesión | Permite regresar a Administración; confirmado por el usuario. |
+
+Administración es una **pantalla inicial**, no el panel completo: esta validación no acredita las funciones administrativas previstas. El registro conserva únicamente los resultados y el tipo de evidencia, sin credenciales, hashes de contraseñas, datos de cuentas, archivos `.env` ni exportaciones de la base de datos. No se repitieron pruebas automatizadas ni se cambió su conteo para documentar esta validación.
+
 ## Límites y siguientes comprobaciones
 
-Quedan pendientes el ingreso manual con una cuenta válida, los destinos por rol y el logout manual. **No se declaran comprobados el lector de pantalla ni el funcionamiento manual sin JavaScript**; ambos siguen pendientes. Durante la etapa de implementación la base normal no se inspeccionó para averiguar cuentas y no se crearon cuentas en ella. La pantalla puede abrirse anónimamente siguiendo el README.
+Quedan pendientes las pruebas manuales de los roles Recepción y Operador, incluidos el ingreso con una cuenta válida, sus destinos y el cierre de sesión, así como las demás comprobaciones manuales todavía no realizadas. **No se declaran comprobados el lector de pantalla ni el funcionamiento manual sin JavaScript**; ambos siguen pendientes. Durante la etapa de implementación la base normal no se inspeccionó para averiguar cuentas y no se crearon cuentas en ella. La pantalla puede abrirse anónimamente siguiendo el README.
 
 La primera pantalla de recepción y sus acciones siguen pendientes. El llamado y reserva permanecen en diseño; esta entrega no verifica casos reales en Llamado o En atención, notas, cierre ni correcciones administrativas. Se conservan las evidencias anteriores y sus límites.
