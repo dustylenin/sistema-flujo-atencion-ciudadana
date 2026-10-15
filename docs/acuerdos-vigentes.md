@@ -62,6 +62,10 @@ La cola conjunta reúne los folios **En espera** de todas las oficinas donde el 
 
 **Asignar responsabilidad al llamar y registrar el inicio de atención son momentos distintos.** Otro operador no puede llamar ni iniciar el mismo folio por su cuenta. Se conserva la reasignación administrativa ya acordada cuando el responsable está desactivado, con motivo e historial. Estos acuerdos se registran en la [decisión 004](decisiones/004-cola-y-responsabilidad-de-folios.md); el registro inicial ya está implementado, pero llamado y flujo posterior siguen pendientes de implementación.
 
+**Autorización de inicio aprobada el 15 de octubre de 2026:** la autorización para iniciar deriva de la responsabilidad vigente sobre el folio actual propio, con cuenta activa y rol funcional `OPERADOR`. No se exige nuevamente una asignación operador-oficina activa. Los flags técnicos `is_staff` e `is_superuser` no sustituyen el rol. Esta regla no modifica la prohibición de retirar asignaciones mientras existan folios asignados sin finalizar ni los requisitos vigentes de asignación para recibir nuevos folios. La desactivación de oficina o trámite no impide iniciar el folio propio pendiente.
+
+El diseño de inicio se documenta en la [decisión 013](decisiones/013-diseno-inicio-de-atencion.md). Su implementación, migración y pruebas siguen pendientes; la consulta del folio propio no ejecuta ni autoriza por sí sola la transición.
+
 No se llama automáticamente al siguiente ciudadano. Tras finalizar, el operador decide cuándo continuar, sin una espera fija obligatoria. El tiempo transcurrido por sí solo no cierra ni deniega un folio.
 
 Cola de atención tiene Pendientes e Historial. El historial permite buscar por folio o nombre y filtrar por fecha o rango, trámite y estado.
@@ -100,7 +104,7 @@ La disponibilidad del operador pasa a En pausa y no puede llamar, incluso sin fo
 
 **Regla aprobada el 15 de octubre de 2026:** para pasar de Llamado a En atención, el operador debe haber cerrado su pausa. Reanudar no inicia automáticamente la atención. Una solicitud que obtuvo `EN_PAUSA` conserva ese resultado al repetirse con la misma clave; iniciar después requiere una nueva intención explícita.
 
-La implementación y las pruebas de esta regla siguen pendientes. Esta aprobación no comprende el resto de la propuesta técnica de inicio de atención.
+La implementación, migración y pruebas de inicio siguen pendientes. La [decisión 013](decisiones/013-diseno-inicio-de-atencion.md) cierra su diseño técnico con las reglas aprobadas de pausa y responsabilidad vigente; no acredita su implementación ni validación.
 
 Los prototipos muestran por separado el tiempo desde el inicio de la atención y el tiempo de pausa.
 
