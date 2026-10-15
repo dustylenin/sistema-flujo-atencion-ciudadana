@@ -1,0 +1,27 @@
+{% extends 'operador/base.html' %}
+{% block title %}Atención actual{% endblock %}
+{% block content %}
+  <div class="titulo-pagina">
+    <div><p class="ceja">Trabajo sobre el folio</p><h1>Atención actual</h1><p class="introduccion">Consulta el folio que permanece a tu cargo.</p></div>
+    <a class="boton secundario" href="{% url 'usuarios:operador_actual' %}">Actualizar atención</a>
+  </div>
+  {% include 'operador/_disponibilidad.html' %}
+  {% if actual %}
+    <section class="tarjeta" aria-labelledby="titulo-ciudadano">
+      <div class="encabezado-folio"><div><p class="ceja">Ciudadano</p><h2 class="nombre-ciudadano" id="titulo-ciudadano">{{ actual.nombre_completo }}</h2></div><span class="estado estado-llamado">{% if actual.estado == 'LLAMADO' %}Llamado{% else %}En atención{% endif %}</span></div>
+      <dl class="confirmacion">
+        <div><dt>Oficina</dt><dd>{{ actual.oficina_nombre }}</dd></div>
+        <div><dt>Trámite</dt><dd>{{ actual.tramite_nombre }}</dd></div>
+        <div><dt>Fecha y hora de llegada original</dt><dd>{{ actual.llegada_original|date:'d/m/Y H:i:s T' }}</dd></div>
+        <div><dt>Operador responsable</dt><dd>{{ disponibilidad.username }}</dd></div>
+      </dl>
+      <p class="aviso">Este folio está reservado a tu cargo. Pausar conserva su estado y responsabilidad.</p>
+    </section>
+  {% else %}
+    <section class="tarjeta" aria-labelledby="titulo-vacio">
+      <h2 id="titulo-vacio">Sin folio actual</h2>
+      <p>No tienes un folio a tu cargo en este momento.</p>
+      <a class="boton secundario" href="{% url 'usuarios:operacion' %}">Ir a Cola de atención</a>
+    </section>
+  {% endif %}
+{% endblock %}

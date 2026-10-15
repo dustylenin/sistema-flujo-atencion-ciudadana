@@ -1,0 +1,40 @@
+<section class="tarjeta disponibilidad" aria-labelledby="titulo-disponibilidad">
+  <div>
+    <h2 id="titulo-disponibilidad">Tu disponibilidad</h2>
+    <p><span class="estado disponibilidad-{{ disponibilidad.disponibilidad|lower }}">{{ disponibilidad_texto }}</span></p>
+    {% if disponibilidad.disponibilidad == 'EN_PAUSA' %}
+      <p class="ayuda">Durante la pausa no puedes llamar otro folio. Tu responsabilidad se conserva.</p>
+    {% elif actual %}
+      <p class="ayuda">Tienes un folio a tu cargo. Puedes consultarlo en Atención actual.</p>
+    {% else %}
+      <p class="ayuda">Tú decides cuándo llamar. Se comprobarán los pendientes y tu disponibilidad al enviar.</p>
+    {% endif %}
+  </div>
+  <div class="acciones-operador">
+    {% if form_llamar %}
+      <form method="post" action="{% url 'usuarios:operador_llamar' %}" data-envio-operador>
+        {% include 'operador/_formulario.html' with form=form_llamar %}
+        <button class="boton primario" type="submit">Llamar siguiente</button>
+      </form>
+    {% else %}
+      <button class="boton primario" type="button" disabled>Llamar siguiente</button>
+    {% endif %}
+    {% if form_reanudar %}
+      <form method="post" action="{% url 'usuarios:operador_reanudar' %}" data-envio-operador>
+        {% include 'operador/_formulario.html' with form=form_reanudar %}
+        <button class="boton secundario" type="submit">Reanudar atención</button>
+      </form>
+    {% endif %}
+    {% if form_pausar %}
+      <details class="pausa-formulario">
+        <summary class="boton secundario">Pausar atención</summary>
+        <form method="post" action="{% url 'usuarios:operador_pausar' %}" data-envio-operador>
+          <h3>Pausar atención</h3>
+          {% include 'operador/_formulario.html' with form=form_pausar %}
+          <button class="boton primario" type="submit">Confirmar pausa</button>
+        </form>
+      </details>
+    {% endif %}
+  </div>
+</section>
+{% if cambio_durante_lectura %}<p class="aviso" role="status">La información cambió durante la consulta. Actualiza la pantalla para ver tu situación actual.</p>{% endif %}

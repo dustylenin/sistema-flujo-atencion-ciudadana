@@ -1,0 +1,19 @@
+{% extends 'operador/base.html' %}
+{% block title %}Revisar solicitud{% endblock %}
+{% block content %}
+  <p class="ceja">Acciones del operador</p>
+  <h1>Revisar solicitud</h1>
+  <div class="error resumen" role="alert" tabindex="-1" data-foco-mensajes>
+    <strong>No se pudo confirmar esta solicitud.</strong>
+    {{ form.non_field_errors }}{{ form.token.errors }}
+    {% if form.motivo.errors %}<ul>{% for error in form.motivo.errors %}<li><a href="#{{ form.motivo.id_for_label }}">Motivo de la pausa: {{ error }}</a></li>{% endfor %}</ul>{% endif %}
+  </div>
+  {% if form.intencion %}
+    <form class="tarjeta" method="post" action="{% url accion_ruta %}" data-envio-operador>
+      {% include 'operador/_formulario.html' %}
+      <p class="ayuda">Este formulario conserva la misma solicitud. Si ya fue procesada, se recuperará su resultado original.</p>
+      <button class="boton primario" type="submit">{{ accion_texto }}</button>
+    </form>
+  {% endif %}
+  <a class="boton secundario" href="{% url destino %}">Volver a {% if pagina == 'cola' %}Cola de atención{% else %}Atención actual{% endif %}</a>
+{% endblock %}

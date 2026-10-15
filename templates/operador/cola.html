@@ -1,0 +1,51 @@
+{% extends 'operador/base.html' %}
+{% block title %}Cola de atención{% endblock %}
+{% block content %}
+  <div class="titulo-pagina">
+    <div><p class="ceja">Panel del operador</p><h1>Cola de atención</h1><p class="introduccion">Pendientes de todas tus oficinas asignadas, ordenados por llegada original.</p></div>
+    <a class="boton secundario" href="{% url 'usuarios:operacion' %}">Actualizar cola</a>
+  </div>
+  {% include 'operador/_disponibilidad.html' %}
+  <div class="panel-cola">
+    <section class="tarjeta" aria-labelledby="titulo-pendientes">
+      <h2 id="titulo-pendientes">Ciudadanos en espera</h2>
+      <p class="ayuda">La cola puede cambiar. Llamar siguiente siempre busca la llegada más antigua de toda tu cola, aunque estés en otra página.</p>
+      {% if error_cursor %}
+        <p class="error" role="alert">{{ error_cursor }}</p>
+      {% elif pendientes.pendientes %}
+        <div class="tabla-contenedor" role="region" aria-label="Pendientes de atención" tabindex="0">
+          <table>
+            <caption class="solo-lectores">Ciudadanos en espera ordenados por llegada original</caption>
+            <thead><tr><th scope="col">Ciudadano</th><th scope="col">Oficina y trámite</th><th scope="col">Llegada</th><th scope="col">Estado</th></tr></thead>
+            <tbody>{% for folio in pendientes.pendientes %}<tr>
+              <th scope="row">{{ folio.nombre_completo }}</th>
+              <td><strong>{{ folio.oficina_nombre }}</strong><span class="dato-secundario">{{ folio.tramite_nombre }}</span></td>
+              <td>{{ folio.llegada_original|date:'d/m/Y' }}<span class="dato-secundario">{{ folio.llegada_original|date:'H:i:s T' }}</span></td>
+              <td><span class="estado">En espera</span></td>
+            </tr>{% endfor %}</tbody>
+          </table>
+        </div>
+        <p class="ayuda">Mostrando {{ pendientes.pendientes|length }} pendientes en esta página.</p>
+      {% elif continuacion %}
+        <p class="aviso" role="status">No hay más pendientes en esta página. Vuelve al inicio para actualizar la cola.</p>
+      {% else %}
+        <p class="aviso" role="status">No hay pendientes en tu cola en este momento.</p>
+      {% endif %}
+      <div class="paginacion" aria-label="Páginas de pendientes">
+        {% if continuacion or error_cursor %}<a class="boton secundario" href="{% url 'usuarios:operacion' %}">Volver al inicio</a>{% endif %}
+        {% if pendientes.cursor_siguiente %}<a class="boton secundario" href="{% url 'usuarios:operacion' %}?cursor={{ pendientes.cursor_siguiente|urlencode }}">Siguiente página</a>{% endif %}
+      </div>
+    </section>
+    <aside class="tarjeta orientacion" aria-labelledby="titulo-propio">
+      <h2 id="titulo-propio">Tu folio actual</h2>
+      {% if actual %}
+        <p class="nombre-ciudadano">{{ actual.nombre_completo }}</p>
+        <p>{{ actual.oficina_nombre }}<br><span class="dato-secundario">{{ actual.tramite_nombre }}</span></p>
+        <a class="boton secundario" href="{% url 'usuarios:operador_actual' %}">Ver atención actual</a>
+      {% else %}
+        <p>No tienes un folio a tu cargo.</p>
+        <p class="ayuda">Llamar siguiente reserva el folio para ti. No necesitas elegir oficina o ciudadano.</p>
+      {% endif %}
+    </aside>
+  </div>
+{% endblock %}

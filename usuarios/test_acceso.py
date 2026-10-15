@@ -147,7 +147,14 @@ class AccesoTests(CatalogosPostgreSQLTestCase):
             self.entrar(rol, client)
             for url in self.destinos.values():
                 with self.subTest(rol=rol, url=url):
-                    self.assertEqual(client.get(url).status_code, 200 if url == destino else 403)
+                    response = client.get(url)
+                    self.assertEqual(response.status_code, 200 if url == destino else 403)
+                    if rol == Usuario.Rol.OPERADOR and url == destino:
+                        self.assertTemplateUsed(response, "operador/cola.html")
+                        self.assertContains(response, "Cola de atención")
+                        self.assertContains(response, 'href="/operacion/actual/"')
+                        self.assertContains(response, "No hay pendientes en tu cola")
+                        self.assertNotContains(response, "Iniciar atención")
 
     def test_flags_tecnicos_no_conceden_ni_restringen_permisos_funcionales(self):
         for rol, cuenta in self.cuentas.items():
@@ -274,6 +281,13 @@ class AccesoTests(CatalogosPostgreSQLTestCase):
         for url in ("/", "/recepcion/", "/acceso/"):
             with self.subTest(url=url):
                 self.assertIn("no-store", self.client.get(url).headers["Cache-Control"])
+        operador = Client()
+        self.assertRedirects(self.entrar(Usuario.Rol.OPERADOR, operador), "/operacion/")
+        for url in ("/operacion/", "/operacion/actual/"):
+            with self.subTest(url=url):
+                response = operador.get(url)
+                self.assertEqual(response.status_code, 200)
+                self.assertIn("no-store", response.headers["Cache-Control"])
 
     def test_no_hay_rutas_de_registro_contrasenas_ni_admin_tecnico(self):
         antes = Usuario.objects.count()

@@ -1,0 +1,41 @@
+{% load static %}
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Operador{% endblock %} · Atención ciudadana</title>
+  <link rel="stylesheet" href="{% static 'css/recepcion.css' %}">
+  <link rel="stylesheet" href="{% static 'css/operador.css' %}">
+  <script src="{% static 'js/operador.js' %}" defer></script>
+</head>
+<body>
+  <a class="saltar" href="#contenido">Ir al contenido</a>
+  <div class="estructura">
+    <aside class="lateral" aria-label="Operador">
+      <div class="identidad"><span class="marca" aria-hidden="true">SF</span><strong>Atención<br>Ciudadana</strong></div>
+      <p class="submarca">Sistema de gestión</p>
+      <nav aria-label="Navegación de Operador">
+        <p class="rol">Operador</p>
+        <a class="nav-enlace{% if pagina == 'cola' %} nav-activa{% endif %}" href="{% url 'usuarios:operacion' %}"{% if pagina == 'cola' %} aria-current="page"{% endif %}>Cola de atención</a>
+        <a class="nav-enlace{% if pagina == 'actual' %} nav-activa{% endif %}" href="{% url 'usuarios:operador_actual' %}"{% if pagina == 'actual' %} aria-current="page"{% endif %}>Atención actual</a>
+      </nav>
+      <div class="sesion">
+        <p>Operador<br><strong>{{ user.get_username }}</strong></p>
+        <form method="post" action="{% url 'usuarios:logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="salir">Cerrar sesión</button>
+        </form>
+      </div>
+    </aside>
+    <div class="principal">
+      <header class="cabecera">Operador <span aria-hidden="true">/</span> {% if pagina == 'cola' %}Cola de atención{% else %}Atención actual{% endif %}</header>
+      <main id="contenido" tabindex="-1">
+        {% if messages %}<div class="mensajes" tabindex="-1" data-foco-mensajes>{% for message in messages %}<p class="aviso" role="status">{{ message }}</p>{% endfor %}</div>{% endif %}
+        {% block content %}{% endblock %}
+      </main>
+      <footer>Sistema de Flujo de Atención Ciudadana</footer>
+    </div>
+  </div>
+</body>
+</html>

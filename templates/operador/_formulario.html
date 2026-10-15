@@ -1,0 +1,10 @@
+{% csrf_token %}
+{{ form.token }}
+{% if form.motivo %}
+  <div class="grupo">
+    <label for="{{ form.motivo.id_for_label }}">Motivo de la pausa <span aria-hidden="true">*</span></label>
+    {{ form.motivo }}
+    <p class="ayuda" id="ayuda-motivo">Obligatorio. Se conservará el motivo que escribas. La pausa mantiene el folio a tu cargo, si lo tienes.</p>
+    <div id="error-motivo">{{ form.motivo.errors }}</div>
+  </div>
+{% endif %}

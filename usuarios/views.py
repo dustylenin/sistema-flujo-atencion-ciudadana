@@ -33,11 +33,6 @@ def _destino(request, titulo):
     return render(request, "usuarios/destino.html", {"titulo": titulo})
 
 
-@requiere_rol(Usuario.Rol.OPERADOR)
-def operacion(request):
-    return _destino(request, "Operación")
-
-
 @requiere_rol(Usuario.Rol.ADMINISTRADOR)
 def administracion(request):
     return _destino(request, "Administración")
