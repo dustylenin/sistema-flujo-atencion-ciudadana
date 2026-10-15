@@ -2,13 +2,13 @@
 
 Fecha de cierre del diseño: **15 de octubre de 2026**.
 
-Estado: **diseño técnico documentado con las dos reglas funcionales aprobadas; implementación, generación y aplicación de la migración, pruebas e integración de interfaz pendientes**.
+Estado actualizado al **15 de octubre de 2026**: **backend implementado y validado en PostgreSQL aislado; 0004 aplicada únicamente allí y DEMO recuperado. Aplicación en la base normal e integración de interfaz pendientes**. El [registro 019](../pruebas/019-inicio-atencion-postgresql.md) conserva resultados, incidencias y recuperación; la preparación sin conexión queda registrada por separado al final.
 
 ## Autoridad y alcance
 
 Los [acuerdos vigentes](../acuerdos-vigentes.md), «Recorrido de atención» y «Pausas», son la fuente principal. Se conservan la responsabilidad desde Llamado de la [decisión 004](004-cola-y-responsabilidad-de-folios.md), el folio actual global de la [006](006-disponibilidad-y-folio-actual-del-operador.md), los comprobantes y bloqueos de la [007](007-diseno-pausas-y-disponibilidad.md) y la [008](008-diseno-llamado-y-reserva.md), las lecturas de la [011](011-lecturas-autorizadas-de-operador.md) y la integración existente de la [012](012-integracion-pantallas-operador.md).
 
-Esta decisión cierra únicamente el diseño de **Llamado → En atención**. No implementa código ni incluye notas, finalización, denegación, traslados, correcciones administrativas u otras acciones. Las evidencias anteriores no validan el inicio. Los avisos antiguos sobre llamado pendiente en documentos funcionales conservan su contexto; la implementación existente se describe en 008, 011 y 012.
+Esta decisión cierra únicamente el diseño de **Llamado → En atención** y registra su preparación posterior de backend. No incluye notas, finalización, denegación, traslados, correcciones administrativas u otras acciones. Las evidencias anteriores no validan el inicio. Los avisos antiguos sobre llamado pendiente en documentos funcionales conservan su contexto; la implementación existente se describe en 008, 011 y 012.
 
 ## Reglas funcionales aprobadas
 
@@ -23,7 +23,7 @@ Los nombres de contratos, campos, resultados sin transición, representación de
 
 ## Servicio y resultado
 
-Servicio previsto en `folios/services_inicio.py`:
+Servicio implementado en `folios/services_inicio.py` y validado en PostgreSQL aislado conforme al registro 019:
 
 ```python
 iniciar_atencion(
@@ -36,7 +36,7 @@ iniciar_atencion(
 
 `actor` procede del contexto autenticado del servidor. `folio_id` fija el folio concreto mostrado; no es una selección libre de ciudadano ni una orden de operar sobre cualquier folio. El servicio exige que sea el actual propio. No recibe oficina, responsable destino, fecha, estado ni alias de base.
 
-`ResultadoInicio` será una dataclass inmutable y materializada:
+`ResultadoInicio` es una dataclass inmutable y materializada:
 
 | Campo | Contenido |
 | --- | --- |
@@ -126,9 +126,9 @@ El bloqueo de Usuario serializa inicio, llamado, pausa, reanudación y cambios d
 
 Se mantiene `folios_folio_actual_unico`, que ya incluye LLAMADO y EN_ATENCION entre todas las oficinas. No se modifica la selección ni el orden de bloqueo de todas las oficinas que utiliza llamado. Los servicios públicos siguen siendo la vía de escritura; SQL directo y APIs internas pueden eludir las barreras del ORM, y las restricciones no sustituyen la autorización ni garantizan por sí solas auditoría entre tablas.
 
-## Restricciones y migración pendiente
+## Restricciones y estado de migración
 
-La migración prevista es **`folios.0004_inicio_de_atencion`**, dependiente de 0003; el nombre queda sujeto a que no aparezca otra migración antes de implementar. **No se ha generado ni aplicado**. No se reescriben 0001–0003.
+La migración es [**`folios.0004_inicio_de_atencion`**](../../folios/migrations/0004_inicio_de_atencion.py), dependiente de 0003. Se generó inicialmente en memoria con apertura de conexiones bloqueada y posteriormente se aplicó y verificó **solo en `test_atencion_catalogos_migraciones / atencion_test`**, con respaldo nuevo y preservación de DEMO. El registro 019 detalla las reversiones y reaplicaciones de las pruebas de migración aisladas. **Su aplicación en la base normal sigue pendiente; esa base no se conectó.** No se reescribieron 0001–0003 ni se modificó 0004 después de aplicarla.
 
 1. Añadir `inicio_atencion` a Folio, `oficina_contexto` a EventoFolio y `folio_objetivo` a SolicitudOperador, todos nullable y sin reconstrucción de datos históricos.
 2. Ampliar choices de Folio con EN_ATENCION, de EventoFolio con INICIO y de solicitudes con las operaciones/resultados descritos; los tamaños actuales admiten esos valores.
@@ -137,9 +137,9 @@ La migración prevista es **`folios.0004_inicio_de_atencion`**, dependiente de 0
 
 Todos los folios existentes En espera o Llamado conservan estado, responsable y llegada; `inicio_atencion` queda NULL. Los eventos previos conservan íntegramente sus datos y `oficina_contexto` queda NULL. Los comprobantes anteriores conservan claves, resultados, fechas y referencias; `folio_objetivo` queda NULL, incluido LLAMAR, cuyo resultado no se convierte en argumento objetivo.
 
-La revisión posterior incluirá operaciones y SQL de la migración, validez de restricciones, conservación de datos y compatibilidad de reintentos. No se planifica un retroceso que elimine evidencia de inicios ya registrados: una reversión tras usar el nuevo estado requerirá evaluación específica de preservación, sin borrar o convertir datos para hacerla pasar.
+La validación aislada verificó operaciones y SQL de la migración, restricciones e índices válidos, conservación de datos y compatibilidad de reintentos. No se planifica un retroceso que elimine evidencia de inicios ya registrados: una reversión tras usar el nuevo estado requerirá evaluación específica de preservación, sin borrar o convertir datos para hacerla pasar.
 
-## Pruebas previstas, todavía no implementadas ni ejecutadas
+## Cobertura de backend y pruebas de interfaz pendientes
 
 | Grupo | Cobertura necesaria |
 | --- | --- |
@@ -154,6 +154,8 @@ La revisión posterior incluirá operaciones y SQL de la migración, validez de 
 
 Los fixtures de cambio de rol o asignación inactiva no habilitan operaciones públicas hoy bloqueadas. Las futuras pruebas usarán exclusivamente infraestructura aislada y preservación previa del estado vigente, sin atribuir al inicio las pruebas anteriores.
 
+Los **48 casos de backend** son 26 funcionales y de restricciones en `test_inicio.py`, 20 de concurrencia en `test_inicio_concurrencia.py` y 2 de migración en `test_migracion_inicio.py`. Quedaron verificados tras corregir el auxiliar del fixture de migración y están incluidos en la regresión de 356 casos satisfactoria del registro 019. La cobertura HTTP de inicio, la ampliación del lector con su fecha y su integración de interfaz permanecen para la entrega posterior; no están preparadas como parte de este backend. El lector existente conserva su contrato y su comprobación con el estado En atención pasó.
+
 ## Integración posterior en Atención actual
 
 Añadir POST `/operacion/iniciar/`, protegido por rol OPERADOR, CSRF y `never_cache`, que delegue exclusivamente en el servicio con `request.user`. Mantener GET `/operacion/actual/` sin selección por UUID ni escrituras.
@@ -166,8 +168,36 @@ Mantener POST → redirección → GET a Atención actual y resultados históric
 
 Se reutilizarán formularios HTML y ayuda JavaScript opcional de 012, sin reintentos automáticos. La interfaz no incorporará otras acciones ni expondrá datos adicionales de pausas.
 
-## Estado documental y conservación de DEMO
+## Entrega documental inicial y conservación de DEMO
 
-Esta entrega modifica únicamente acuerdos, esta decisión y la referencia breve de README. No modifica código, modelos, pruebas ni migraciones; no ejecuta comandos de Django, pruebas u operaciones de base de datos. **Implementación, migración, pruebas y botón permanecen pendientes.** No quedan decisiones funcionales pendientes para este inicio dentro del alcance descrito; las demás acciones conservan sus pendientes previos.
+La entrega documental inicial modificó únicamente acuerdos, esta decisión y la referencia breve de README. No modificó código, modelos, pruebas ni migraciones ni ejecutó comandos de Django, pruebas u operaciones de base de datos. Entonces quedaron pendientes implementación, migración, pruebas y botón. No quedan decisiones funcionales pendientes para este inicio dentro del alcance descrito; las demás acciones conservan sus pendientes previos.
 
-El estado vigente de DEMO procede de la comprobación manual del [registro 018](../pruebas/018-comprobacion-manual-operador.md): folio Llamado a cargo de `operador_demo`, otro pendiente y las pausas de esa sesión. Se conserva sin inspección nueva de base ni restauración de respaldos anteriores. Antes de una futura validación deberá preservarse nuevamente ese estado o utilizarse otra base aislada que no lo altere; esta decisión no autoriza limpieza ni recuperación de un estado anterior.
+El estado vigente de DEMO procede de la comprobación manual del [registro 018](../pruebas/018-comprobacion-manual-operador.md): folio Llamado a cargo de `operador_demo`, otro pendiente y las pausas de esa sesión. La preparación documental y de código no tocó esa base. La validación posterior de 019 capturó y recuperó ese estado desde un respaldo nuevo, sin cargar respaldos anteriores a la sesión manual. Antes de otra validación deberá preservarse nuevamente el estado vigente o utilizarse otra base aislada que no lo altere.
+
+## Preparación del backend — 15 de octubre de 2026
+
+Se preparó `iniciar_atencion` con identidad persistida, relectura de cuenta y rol bajo bloqueo antes de recuperar comprobantes; objetivo UUID concreto y responsabilidad vigente sin consultar asignaciones; prioridad YA_EN_ATENCION sobre pausa para solicitudes nuevas; EN_PAUSA histórico y nueva intención explícita para iniciar después. La transición escribe únicamente estado e inicio; evento INICIO y comprobante se insertan en la misma transacción. La evidencia temporal se compara con llegada y eventos previos sin exigir un evento histórico para autorizar ni reconstruir fechas.
+
+| Archivo | Cambio preparado |
+| --- | --- |
+| `folios/services_inicio.py` | Servicio, resultados inmutables y persistencia privada específica de inicio. |
+| `folios/models.py`, `folios/migrations/0004_inicio_de_atencion.py` | Tres campos nullable, estados/resultados nuevos y CHECK ampliados; unicidad global y comprobantes previos conservados. |
+| `folios/solicitudes.py` | Comparación del folio objetivo; NULL por defecto conserva los contratos de llamado y disponibilidad. |
+| `folios/services_disponibilidad.py` | Comentario actualizado; no cambian consultas, permisos ni mutaciones existentes. |
+| `folios/test_inicio.py`, `test_inicio_concurrencia.py`, `test_migracion_inicio.py` | Casos funcionales, restricciones, reintentos anteriores, concurrencia real y conservación completa de valores/referencias desde 0003; fallo simulado de DDL y recuperación del esquema vigente. |
+| `folios/test_migracion_llamado.py` | Limpieza registrada antes de retroceder; restaura todas las hojas actuales del grafo, incluso si falla setUp, en lugar de dejar el esquema en 0003. La prueba nueva de migración utiliza el mismo criterio. |
+| `folios/test_llamado.py`, `test_lecturas_operador.py`, `test_operador.py` | Se admite EN_ATENCION sin debilitar unicidad ni coherencia de fecha; lectura sigue sin iniciar y la pantalla no incorpora formulario de inicio. |
+
+Verificaciones realizadas sin configuración local ni credenciales: compilación de sintaxis de 72 archivos Python en memoria, importación de servicio y módulos de pruebas sin invocar casos ni runner, checks de modelos con `databases=[]`, grafo de migraciones sin conflictos y comparación mediante `MigrationLoader(None)` y `MigrationAutodetector` sin diferencias entre modelos y migraciones. Se compilaron en memoria los cinco CHECK de Folio, EventoFolio y SolicitudOperador a SQL PostgreSQL, sin ejecutar sentencias. La apertura de conexiones y cursores estuvo bloqueada explícitamente; no hubo intentos de conexión. Se revisó el diff y el formato con `git diff --check`. Estas verificaciones no acreditan ejecución del servicio, SQL real, contención PostgreSQL ni preservación efectiva tras migrar.
+
+**Al finalizar aquella preparación** seguían pendientes la aplicación de 0004, los 48 casos nuevos, la regresión, la inspección posterior y la interfaz. En esa etapa no se ejecutaron suites ni operaciones de base, migraciones, servidores o restauraciones; no se hizo commit ni push. El backend requiere el esquema de 0004 para ejecutarse. La validación posterior se registra a continuación y no se atribuye a las verificaciones sin conexión.
+
+## Validación aislada — 15 de octubre de 2026
+
+El [registro 019](../pruebas/019-inicio-atencion-postgresql.md) documenta revisión completa del servicio, CHECK, SQL, bloqueos y reintentos, identidad real aislada, puertos 8000/8001 detenidos, ausencia de conexiones ajenas y respaldo nuevo privado de 18 tablas y 16 secuencias. 0004 se aplicó una vez antes del runner: 24 migraciones y ninguna pendiente, datos/secuencias de aplicación conservados y tres campos nuevos NULL.
+
+La primera ejecución de 48 casos pasó los 26 funcionales/de restricciones y los 20 de concurrencia. Los dos de migración fallaron antes de construir sus datos por colisión entre el argumento `nombre` del auxiliar `insertar` y el campo homónimo de Oficina. Se cambió únicamente ese argumento a `modelo`; no se relajaron expectativas ni se modificaron servicio, restricciones o migración. Pasaron los dos casos corregidos y después la **regresión completa de 356 pruebas Django, incluidas las 48 nuevas**, además de 8 pruebas JavaScript existentes. `check` y correspondencia modelos/migraciones fueron correctos.
+
+Se realizaron dos recuperaciones selectivas, también después de la pasada fallida, seguidas de comprobaciones independientes de solo lectura: 17 tablas de datos idénticas al manifiesto nuevo, 15 próximas asignaciones originales y valores nuevos NULL. Se conservaron el esquema de 0004, todas las restricciones validadas, índices válidos y el historial y secuencia de migraciones resultantes. Se confirmó un Llamado propio de `operador_demo` y un pendiente. El registro detalla también las correcciones del auxiliar privado de verificación, sin cambios en el dump o datos recuperados.
+
+**Aplicación de 0004 en la base normal pendiente; no se conectó ni modificó esa base.** Rutas, formularios, botón, fecha de inicio en el lector e integración visual siguen pendientes. No se reiniciaron servidores ni se hizo commit o push. Respaldo, manifiesto, recuperación y registros privados permanecen fuera de Git.

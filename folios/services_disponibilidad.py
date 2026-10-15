@@ -97,7 +97,7 @@ def _id_positivo(value, campo):
 
 def _folios_actuales(using, operador_id):
     # Global: no depende de actividad de oficinas, trámites o asignaciones.
-    # EN_ATENCION sigue sin habilitarse en los choices ni el CHECK de Folio.
+    # Ambos estados conservan la capacidad global, también durante una pausa.
     return Folio.objects.using(using).filter(
         operador_responsable_id=operador_id, estado__in=["LLAMADO", "EN_ATENCION"],
     ).order_by("pk")

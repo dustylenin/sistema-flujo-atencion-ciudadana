@@ -16,13 +16,14 @@ def clave_solicitud(value):
         raise ValidationError({"solicitud_id": "Se requiere un UUID válido."}) from error
 
 
-def buscar_solicitud(*, operador, clave, operacion, motivo, pausa_id, using):
+def buscar_solicitud(*, operador, clave, operacion, motivo, pausa_id, using, folio_id=None):
     # El servicio llamante ya autorizó y mantiene el bloqueo de Usuario.
     solicitud = SolicitudOperador.objects.using(using).filter(
         operador=operador, solicitud_id=clave,
     ).first()
     if solicitud is not None and (
         solicitud.operacion, solicitud.motivo_solicitado, solicitud.pausa_objetivo_id,
-    ) != (operacion, motivo, pausa_id):
+        solicitud.folio_objetivo_id,
+    ) != (operacion, motivo, pausa_id, folio_id):
         raise ValidationError({"solicitud_id": "Esta clave ya confirmó argumentos diferentes."})
     return solicitud

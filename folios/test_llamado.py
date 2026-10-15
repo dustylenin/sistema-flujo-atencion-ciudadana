@@ -323,7 +323,7 @@ class LlamadoTests(LlamadoFixturesMixin, CatalogosPostgreSQLTestCase):
             transaction.set_rollback(True)
         self.assertEqual(self.snapshot(), antes)
 
-    def test_unicidad_global_y_estado_en_atencion_no_habilitado(self):
+    def test_unicidad_global_y_en_atencion_exige_fecha_de_inicio(self):
         self.registrar()
         self.llamar()
         folio = self.registrar(self.segunda)
@@ -335,7 +335,7 @@ class LlamadoTests(LlamadoFixturesMixin, CatalogosPostgreSQLTestCase):
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE folios_folio SET estado = 'EN_ATENCION', operador_responsable_id = %s WHERE id = %s", [self.otro.pk, folio.pk])
         self.assert_rechazo_postgresql(estado_futuro, "23514", "folios_folio_estado_responsable")
-        self.assertNotIn("EN_ATENCION", Folio.Estado.values)
+        self.assertIn("EN_ATENCION", Folio.Estado.values)
 
     def test_check_evento_llamado_rechaza_null_y_actor_distinto(self):
         self.registrar()

@@ -26,7 +26,8 @@ class MigracionLlamadoTests(DisponibilidadFixturesMixin, CatalogosPostgreSQLTran
         self.old_apps = executor.loader.project_state([self.anterior]).apps
 
     def restaurar_esquema(self):
-        MigrationExecutor(connection).migrate([self.nueva])
+        executor = MigrationExecutor(connection)
+        executor.migrate(executor.loader.graph.leaf_nodes())
 
     def insertar(self, model, **kwargs):
         obj = model(**kwargs)

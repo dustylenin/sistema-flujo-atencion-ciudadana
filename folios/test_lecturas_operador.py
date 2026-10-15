@@ -431,11 +431,11 @@ class LecturasOperadorTests(LlamadoFixturesMixin, CatalogosPostgreSQLTestCase):
                     with self.assertNumQueries(0), self.assertRaises(TypeError):
                         lector(actor=self.operador, **{campo: 1})
 
-    def test_lectura_no_cambia_seleccion_del_llamado_ni_habilita_en_atencion(self):
+    def test_lectura_no_cambia_seleccion_del_llamado_ni_inicia_atencion(self):
         folio = self.registrar()
         self.assertEqual(self.ids(), [folio.pk])
         llamado = self.llamar()
         self.assertEqual((llamado.resultado, llamado.folio_id), (EstadoLlamado.LLAMADO, folio.pk))
         self.assertEqual(self.leer(consultar_folio_actual_operador).estado, "LLAMADO")
         self.assertEqual(self.llamar().resultado, EstadoLlamado.OCUPADO)
-        self.assertNotIn("EN_ATENCION", Folio.Estado.values)
+        self.assertEqual(Folio.objects.get(pk=folio.pk).estado, "LLAMADO")
