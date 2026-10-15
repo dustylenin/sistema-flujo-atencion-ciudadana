@@ -2,19 +2,19 @@
 
 Fecha de aprobación: **14 de octubre de 2026**.
 
-Estado: **diseño aprobado; implementación y pruebas pendientes**.
+Estado actualizado al **14 de octubre de 2026**: **diseño aprobado; lectores implementados y verificados en PostgreSQL aislado; DEMO recuperado**. El [registro 016](../pruebas/016-lecturas-operador-postgresql.md) documenta la validación y recuperación.
 
 ## Autoridad y alcance
 
 El usuario aprobó la propuesta de consultas de lectura para las primeras pantallas de Operador. Esta decisión registra ese diseño conforme a los [acuerdos vigentes](../acuerdos-vigentes.md) y las decisiones [004](004-cola-y-responsabilidad-de-folios.md), [006](006-disponibilidad-y-folio-actual-del-operador.md), [007](007-diseno-pausas-y-disponibilidad.md) y [008](008-diseno-llamado-y-reserva.md).
 
-El servicio de llamado y reserva y la consulta de disponibilidad ya existen. Las validaciones anteriores no acreditan estos nuevos lectores: su implementación y sus pruebas siguen pendientes. Algunos documentos conservan avisos de etapas previas; esta decisión no reescribe esas evidencias.
+El servicio de llamado y reserva y la consulta de disponibilidad ya existían. Sus validaciones anteriores no acreditaban estos nuevos lectores; la validación propia se registra ahora en 016. Algunos documentos conservan avisos de etapas previas; esta decisión no reescribe esas evidencias.
 
-Esta etapa modifica únicamente documentación. No implementa código ni pantallas, ejecuta pruebas, migraciones u operaciones sobre bases de datos. Los datos DEMO se conservan.
+La aprobación inicial fue únicamente documental y no ejecutó código ni operaciones sobre bases de datos. La implementación y validación posteriores se describen al final, sin incorporar pantallas ni ampliar el alcance aprobado. Los datos DEMO están recuperados.
 
 ## Pendientes de la cola conjunta
 
-Contrato aprobado para implementar posteriormente:
+Contrato implementado:
 
 ```python
 consultar_pendientes_operador(*, actor, cursor=None)
@@ -39,7 +39,7 @@ Las páginas no congelan la cola entre peticiones. Registros, reservas o cambios
 
 ## Folio actual propio
 
-Contrato aprobado para implementar posteriormente:
+Contrato implementado:
 
 ```python
 consultar_folio_actual_operador(*, actor)
@@ -71,17 +71,17 @@ No se amplían las proyecciones de Recepción ni los permisos del administrador.
 
 **Estas lecturas no reservan folios, modifican pausas ni escriben eventos o comprobantes.** Los resultados históricos de solicitudes de llamado o pausa no sustituyen la consulta presente de disponibilidad.
 
-## Archivos previstos y pruebas pendientes
+## Archivos implementados y cobertura
 
-| Archivo previsto | Alcance futuro |
+| Archivo | Alcance |
 | --- | --- |
 | `folios/services_operador.py` | Contratos, lectores, autorización, materialización y cursor. |
 | `folios/test_lecturas_operador.py` | Acceso, campos, orden, paginación, consistencia y ausencia de escrituras. |
-| `folios/test_disponibilidad.py` y `folios/test_llamado.py` | Regresión de contratos e integración con reservas y pausas reales. |
+| `folios/test_disponibilidad.py` y `folios/test_llamado.py` | Regresión existente, ejecutada sin modificar estos archivos. La integración adicional con reservas y pausas reales se prueba en `test_lecturas_operador.py`. |
 
 No se requieren cambios de modelos, migraciones, rutas o plantillas para esta entrega de lectores.
 
-Pruebas relevantes, **todavía no implementadas ni ejecutadas para estos lectores**:
+Cobertura verificada mediante las **31 pruebas nuevas** de estos lectores:
 
 - Actores no autenticados, no persistidos o de otro alias; cuenta inactiva y rol incorrecto releídos, incluso con instancias obsoletas y todas las combinaciones de flags técnicos.
 - Cola de varias oficinas, exclusión de asignaciones inactivas y oficinas ajenas, pendientes antiguos, llegada original y desempate UUID; catálogos desactivados incluidos.
@@ -91,7 +91,15 @@ Pruebas relevantes, **todavía no implementadas ni ejecutadas para estos lectore
 - Autorización y datos en una sola sentencia por lector, incluida la lectura vacía; resultados inmutables y materializados sin consultas posteriores al consumirlos.
 - Únicamente sentencias SELECT, sin bloqueos de reserva y sin cambios en folios, pausas, eventos o comprobantes.
 
-Una ejecución futura requerirá conservar nuevamente DEMO conforme al [registro 014](../pruebas/014-validacion-llamado-y-reserva-postgresql.md). Esta aprobación documental no autoriza limpiar sus datos ni ejecuta el runner.
+Una ejecución futura requerirá conservar nuevamente DEMO conforme al procedimiento del [registro 014](../pruebas/014-validacion-llamado-y-reserva-postgresql.md), revisado y aplicado a un respaldo nuevo en el [registro 016](../pruebas/016-lecturas-operador-postgresql.md). La recuperación verificada no autoriza repetir el runner sobre los datos manuales sin preservarlos otra vez.
+
+## Implementación y validación — 14 de octubre de 2026
+
+Se implementaron ambos lectores en `folios/services_operador.py`, con proyecciones inmutables y materializadas, autorización y datos en una sentencia SQL por lector y alias interno único. La cola utiliza páginas de 50 con cursor firmado y validado por llegada original y UUID; el cursor no contiene permisos ni sustituye su revalidación. El detalle reutiliza `_folios_actuales`, sin cambiar `consultar_disponibilidad`, su contrato o permisos, ni el comportamiento de llamado.
+
+La revisión completa y la ejecución no identificaron defectos que exigieran correcciones al código o a las 31 pruebas preparadas. Pasaron **31 pruebas nuevas** y después **273 pruebas Django de regresión completa, incluidas esas 31**, además de **4 pruebas JavaScript**. `check`, correspondencia modelos/migraciones y formato fueron correctos. No se añadieron modelos, migraciones, rutas o pantallas y EN_ATENCION sigue sin habilitarse.
+
+Se creó y comprobó un respaldo completo nuevo y privado antes de escribir, con manifiesto previo. Se utilizó exclusivamente `config.settings_test_migrations`, con identidad real `test_atencion_catalogos_migraciones / atencion_test`. DEMO se recuperó transaccionalmente y se verificó dos veces: 17 tablas de datos idénticas al manifiesto y 15 secuencias con la próxima asignación original; esquema vigente conservado, 23 migraciones y ninguna pendiente. La prueba existente de migración de la regresión reaplicó 0003; la recuperación no cargó ni alteró el historial resultante ni su secuencia. Los detalles y límites están en 016. No se conectó la base normal ni se hizo commit o push en esta etapa.
 
 ## Exclusiones y decisiones realmente pendientes
 
