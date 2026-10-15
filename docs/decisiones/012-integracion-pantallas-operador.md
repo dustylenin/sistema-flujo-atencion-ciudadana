@@ -2,7 +2,7 @@
 
 Fecha de aprobación del alcance: **14 de octubre de 2026**.
 
-Estado actualizado al **14 de octubre de 2026**: **integración implementada y verificada en PostgreSQL aislado; comprobación visual pendiente; DEMO recuperado**. El [registro 017](../pruebas/017-pantallas-operador-postgresql.md) documenta resultados, ajuste de la prueba de acceso y recuperación.
+Estado actualizado al **14 de octubre de 2026**: **integración implementada, verificada en PostgreSQL aislado y comprobada manualmente por el usuario en Brave/Linux Mint dentro del alcance del registro 018**. El [registro 017](../pruebas/017-pantallas-operador-postgresql.md) conserva las pruebas automatizadas y la recuperación anteriores; el [registro 018](../pruebas/018-comprobacion-manual-operador.md) distingue evidencia visual comunicada, resultados reportados y límites de la comprobación manual.
 
 ## Autoridad y alcance
 
@@ -94,4 +94,8 @@ Pasaron **35 pruebas HTTP nuevas**, **4 JavaScript de Operador** y **4 JavaScrip
 
 DEMO se recuperó tras ambos ciclos, incluido el fallido, y se verificó finalmente en una conexión independiente de solo lectura: 17 tablas de datos idénticas al manifiesto, próximas asignaciones originales de 15 secuencias, esquema conservado y 23 migraciones sin pendientes. La prueba existente de migración reaplicó 0003 en cada regresión; la recuperación conservó el historial resultante y su secuencia, sin cargar el historial antiguo. `check` y correspondencia modelos/migraciones fueron correctos. No se conectó la base normal ni se añadieron funcionalidades, modelos o migraciones. Antes de otro runner debe repetirse la preservación de DEMO.
 
-La comprobación visual e interactiva en escritorio y móvil, con teclado, foco, errores y JavaScript deshabilitado queda pendiente. No se identifican decisiones funcionales nuevas que bloqueen esta integración. Se conservan fuera de alcance las funciones y decisiones pendientes de 011. Esta etapa termina sin commit ni push.
+Al terminar 017, la comprobación visual e interactiva seguía pendiente. Posteriormente, el usuario confirmó mediante capturas y reporte la sesión manual de [018](../pruebas/018-comprobacion-manual-operador.md), en Brave sobre Linux Mint contra `127.0.0.1:8001`: acceso como `operador_demo`, únicamente las dos entradas previstas, dos pendientes por llegada, llamado del más antiguo a Llamado con responsable propio y disponibilidad Ocupado, y un pendiente restante. También confirmó pausa con motivo obligatorio conservando folio/estado/responsable, reanudación a Ocupado y conservación tras recargar.
+
+Las capturas comunicadas respaldan los estados visibles; las interacciones de teclado, foco, ventana estrecha y pausa/reanudación con JavaScript desactivado se registran como confirmaciones del usuario. No se afirma que el asistente haya ejecutado la sesión o comprobado directamente la base, ni una auditoría completa de accesibilidad o prueba en dispositivo móvil real. **El llamado sin JavaScript no se ejecutó manualmente**; tampoco se acredita una revisión manual exhaustiva de errores y estados. Las 308 pruebas Django y 8 JavaScript de 017 no se repitieron.
+
+La actualización de 018 es únicamente documental y conserva el estado generado por la sesión manual, sin restaurar respaldos anteriores. No se identifican decisiones funcionales nuevas que bloqueen esta integración. Se conservan fuera de alcance las funciones y decisiones pendientes de 011.
