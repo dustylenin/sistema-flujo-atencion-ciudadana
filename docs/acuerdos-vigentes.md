@@ -1,6 +1,6 @@
 # Sistema de Flujo de Atención Ciudadana
 
-Reglas vigentes tras la revisión de los prototipos. Actualización: 12 de octubre de 2026.
+Reglas vigentes tras la revisión de los prototipos. Actualización: 15 de octubre de 2026.
 
 Este documento reúne las decisiones aprobadas para orientar la programación. Las revisiones visuales corresponden a los prototipos. El registro inicial de folios está implementado conforme a la [decisión 005](decisiones/005-registro-inicial-de-folios.md), y Nueva atención de Recepción con confirmación propia conforme a la [decisión 010](decisiones/010-nueva-atencion-recepcion.md). Su revisión manual sigue pendiente. Los recorridos posteriores y las restantes pantallas siguen pendientes; llamado todavía no está programado. La primera entrega de pausas y disponibilidad está implementada en servicios conforme a la decisión 007, sin incorporar esas acciones en esta pantalla.
 
@@ -97,6 +97,10 @@ Ambas acciones requieren motivo y confirmación. El folio pasa a Finalizado y el
 La pausa está disponible en todo momento, incluso con un ciudadano Llamado o En atención. Requiere motivo y el operador puede reanudar cuando lo decida, sin autorización administrativa.
 
 La disponibilidad del operador pasa a En pausa y no puede llamar, incluso sin folio actual. Al reanudar queda Libre u Ocupado según tenga un folio actual. El folio conserva su asignación al operador, su estado y sus notas. Recepción consulta la pausa en Status. El administrador consulta operador, motivo, inicio, fin, duración, oficina y folio asociado en Registro de actividad.
+
+**Regla aprobada el 15 de octubre de 2026:** para pasar de Llamado a En atención, el operador debe haber cerrado su pausa. Reanudar no inicia automáticamente la atención. Una solicitud que obtuvo `EN_PAUSA` conserva ese resultado al repetirse con la misma clave; iniciar después requiere una nueva intención explícita.
+
+La implementación y las pruebas de esta regla siguen pendientes. Esta aprobación no comprende el resto de la propuesta técnica de inicio de atención.
 
 Los prototipos muestran por separado el tiempo desde el inicio de la atención y el tiempo de pausa.
 
