@@ -32,6 +32,14 @@ class AdminOficinasViewTests(CatalogosPostgreSQLTestCase):
         self.assertEqual(self.url, "/administracion/oficinas/")
         self.assertEqual(reverse("usuarios:admin_oficinas"), "/administracion/oficinas/")
 
+    def test_administrador_resumen_renderiza_plantilla_resumen(self):
+        self.client.force_login(self.admin)
+        response = self.client.get(reverse("usuarios:administracion"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "administracion/resumen.html")
+        self.assertContains(response, "Resumen")
+        self.assertContains(response, reverse("oficinas:gestion_oficinas"))
+
     def test_acceso_anonimo_redirige_a_login(self):
         response = self.client.get(self.url)
         self.assertRedirects(response, reverse("usuarios:login"))

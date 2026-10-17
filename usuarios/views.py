@@ -35,4 +35,8 @@ def _destino(request, titulo):
 
 @requiere_rol(Usuario.Rol.ADMINISTRADOR)
 def administracion(request):
-    return _destino(request, "Administración")
+    return render(
+        request,
+        "administracion/resumen.html",
+        {"seccion": "resumen", "pagina": "resumen"},
+    )
