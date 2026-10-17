@@ -2,6 +2,7 @@ from django.urls import path
 
 from folios import views as recepcion_views
 from folios import views_operador as operador_views
+from oficinas import views as oficinas_views
 
 from . import views
 
@@ -22,4 +23,5 @@ urlpatterns = [
     path("operacion/iniciar/", operador_views.iniciar, name="operador_iniciar"),
     path("operacion/finalizar/", operador_views.finalizar, name="operador_finalizar"),
     path("administracion/", views.administracion, name="administracion"),
+    path("administracion/oficinas/", oficinas_views.gestion_oficinas, name="admin_oficinas"),
 ]

@@ -1,0 +1,134 @@
+{% extends "administracion/base.html" %}
+{% block title %}Gestión de Oficinas{% endblock %}
+{% block ubicacion %}Oficinas{% endblock %}
+
+{% block content %}
+  <div class="titulo-pagina">
+    <div>
+      <p class="ceja">Administración del sistema</p>
+      <h1>Gestión de Oficinas</h1>
+      <p class="introduccion">Catálogo y configuración de oficinas de atención ciudadana.</p>
+    </div>
+    <button class="boton primario" type="button" id="btn-nueva-oficina" onclick="document.getElementById('dialog-nueva-oficina').showModal()">Nueva oficina</button>
+  </div>
+
+  <section class="tarjeta" aria-labelledby="titulo-oficinas">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h2 id="titulo-oficinas" style="margin: 0;">Oficinas registradas</h2>
+      <button class="boton primario" type="button" onclick="document.getElementById('dialog-nueva-oficina').showModal()">Nueva oficina</button>
+    </div>
+    <p class="ayuda">Listado de oficinas y su disponibilidad para trámites y asignación de operadores.</p>
+
+    <div class="tabla-contenedor" role="region" aria-label="Catálogo de oficinas" tabindex="0">
+      <table>
+        <caption class="solo-lectores">Oficinas registradas en el sistema</caption>
+        <thead>
+          <tr>
+            <th scope="col">Oficina</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Trámites compatibles</th>
+            <th scope="col">Operadores</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for oficina in oficinas %}
+            <tr>
+              <th scope="row"><strong>{{ oficina.nombre }}</strong></th>
+              <td>
+                {% if oficina.activo %}
+                  <span class="estado estado-en-atencion">Activa</span>
+                {% else %}
+                  <span class="estado disponibilidad-en_pausa">Inactiva</span>
+                {% endif %}
+              </td>
+              <td>{{ oficina.tramites.count }}</td>
+              <td>{{ oficina.asignaciones_operadores.count }}</td>
+              <td>
+                <div class="acciones" style="justify-content: flex-start; gap: 8px;">
+                  <button class="boton secundario" type="button">Editar</button>
+                  <button class="boton secundario" type="button">{% if oficina.activo %}Desactivar{% else %}Activar{% endif %}</button>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5">
+                <p class="aviso" role="status">No hay oficinas registradas en el sistema.</p>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <dialog id="dialog-nueva-oficina" class="tarjeta" aria-labelledby="titulo-modal" style="max-width: 540px; width: 100%;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h2 id="titulo-modal" style="margin: 0;">Nueva oficina</h2>
+      <button type="button" class="salir" id="btn-cerrar-modal" style="color: var(--texto); border-color: #8c8790;" onclick="document.getElementById('dialog-nueva-oficina').close()" aria-label="Cerrar modal">✕</button>
+    </div>
+    {% if form.errors %}
+      <div class="error resumen" role="alert" tabindex="-1">
+        <strong>Revisa los datos antes de guardar.</strong>
+        <ul>
+          {% for field in form %}
+            {% for error in field.errors %}
+              <li>{{ field.label }}: {{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+          {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    <form method="post" action="{% url 'oficinas:gestion_oficinas' %}">
+      {% csrf_token %}
+      <div class="grupo grupo-campo">
+        <label for="id_nombre">Nombre <span aria-hidden="true">*</span></label>
+        <input type="text" name="nombre" id="id_nombre" class="campo" required maxlength="150" placeholder="Ej. Licencias y Tránsito" value="{{ form.nombre.value|default_if_none:'' }}"{% if form.nombre.errors %} aria-invalid="true"{% endif %}>
+        {% if form.nombre.errors %}
+          <div class="errorlist">{{ form.nombre.errors }}</div>
+        {% endif %}
+      </div>
+      <div class="grupo grupo-campo">
+        <label for="id_descripcion">Descripción <span class="opcional">Opcional</span></label>
+        <textarea name="descripcion" id="id_descripcion" class="campo" rows="3" placeholder="Descripción de las funciones de la oficina">{{ form.descripcion.value|default_if_none:'' }}</textarea>
+        {% if form.descripcion.errors %}
+          <div class="errorlist">{{ form.descripcion.errors }}</div>
+        {% endif %}
+      </div>
+      <div class="grupo grupo-campo">
+        <label for="id_activo">Estado</label>
+        <select name="activo" id="id_activo" class="campo">
+          <option value="true"{% if form.activo.value|stringformat:'s' != 'false' %} selected{% endif %}>Activa</option>
+          <option value="false"{% if form.activo.value|stringformat:'s' == 'false' %} selected{% endif %}>Inactiva</option>
+        </select>
+        {% if form.activo.errors %}
+          <div class="errorlist">{{ form.activo.errors }}</div>
+        {% endif %}
+      </div>
+      <div class="acciones" style="margin-top: 24px;">
+        <button type="button" class="boton secundario" onclick="document.getElementById('dialog-nueva-oficina').close()">Cancelar</button>
+        <button type="submit" class="boton primario">Guardar oficina</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var modal = document.getElementById("dialog-nueva-oficina");
+      if (modal) {
+        modal.addEventListener("click", function(event) {
+          if (event.target === modal) {
+            modal.close();
+          }
+        });
+        {% if form.errors %}
+          modal.showModal();
+        {% endif %}
+      }
+    });
+  </script>
+{% endblock %}

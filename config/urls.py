@@ -2,4 +2,7 @@
 
 from django.urls import include, path
 
-urlpatterns = [path("", include("usuarios.urls"))]
+urlpatterns = [
+    path("", include("usuarios.urls")),
+    path("", include("oficinas.urls")),
+]

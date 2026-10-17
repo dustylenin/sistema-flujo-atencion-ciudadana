@@ -1,0 +1,46 @@
+{% load static %}
+<!doctype html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Administración{% endblock %} · Atención ciudadana</title>
+  <link rel="stylesheet" href="{% static 'css/recepcion.css' %}">
+  <link rel="stylesheet" href="{% static 'css/operador.css' %}">
+  {% block scripts %}{% endblock %}
+</head>
+<body>
+  <a class="saltar" href="#contenido">Ir al contenido</a>
+  <div class="estructura">
+    <aside class="lateral" aria-label="Administración">
+      <div class="identidad"><span class="marca" aria-hidden="true">SF</span><strong>Atención<br>Ciudadana</strong></div>
+      <p class="submarca">Sistema de gestión</p>
+      <nav aria-label="Navegación de Administrador">
+        <p class="rol">Administrador</p>
+        <a class="nav-enlace{% if seccion == 'resumen' or pagina == 'resumen' %} nav-activa{% endif %}" href="{% url 'usuarios:administracion' %}"{% if seccion == 'resumen' or pagina == 'resumen' %} aria-current="page"{% endif %}>Resumen</a>
+        <a class="nav-enlace{% if seccion == 'usuarios' or pagina == 'usuarios' %} nav-activa{% endif %}" href="#usuarios"{% if seccion == 'usuarios' or pagina == 'usuarios' %} aria-current="page"{% endif %}>Usuarios</a>
+        <a class="nav-enlace{% if seccion == 'oficinas' or pagina == 'oficinas' %} nav-activa{% endif %}" href="{% url 'oficinas:gestion_oficinas' %}"{% if seccion == 'oficinas' or pagina == 'oficinas' %} aria-current="page"{% endif %}>Oficinas</a>
+        <a class="nav-enlace{% if seccion == 'tramites' or pagina == 'tramites' %} nav-activa{% endif %}" href="#tramites"{% if seccion == 'tramites' or pagina == 'tramites' %} aria-current="page"{% endif %}>Trámites</a>
+        <a class="nav-enlace{% if seccion == 'asignaciones' or pagina == 'asignaciones' %} nav-activa{% endif %}" href="#asignaciones"{% if seccion == 'asignaciones' or pagina == 'asignaciones' %} aria-current="page"{% endif %}>Asignaciones</a>
+        <a class="nav-enlace{% if seccion == 'historial' or pagina == 'historial' %} nav-activa{% endif %}" href="#historial"{% if seccion == 'historial' %} aria-current="page"{% endif %}>Historial e incidencias</a>
+        <a class="nav-enlace{% if seccion == 'actividad' or pagina == 'actividad' %} nav-activa{% endif %}" href="#actividad"{% if seccion == 'actividad' %} aria-current="page"{% endif %}>Registro de actividad</a>
+      </nav>
+      <div class="sesion">
+        <p>Administrador<br><strong>{{ user.get_username }}</strong></p>
+        <form method="post" action="{% url 'usuarios:logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="salir">Cerrar sesión</button>
+        </form>
+      </div>
+    </aside>
+    <div class="principal">
+      <header class="cabecera">Administrador <span aria-hidden="true">/</span> {% block ubicacion %}Oficinas{% endblock %}</header>
+      <main id="contenido" tabindex="-1">
+        {% if messages %}<div class="mensajes" tabindex="-1" data-foco-mensajes>{% for message in messages %}<p class="aviso" role="status">{{ message }}</p>{% endfor %}</div>{% endif %}
+        {% block content %}{% endblock %}
+      </main>
+      <footer>Sistema de Flujo de Atención Ciudadana</footer>
+    </div>
+  </div>
+</body>
+</html>
