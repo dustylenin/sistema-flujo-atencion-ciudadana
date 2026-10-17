@@ -427,7 +427,7 @@ class OperadorHTTPTests(LlamadoFixturesMixin, CatalogosPostgreSQLTestCase):
         pagina = self.client.get(self.actual)
         self.assertContains(pagina, "Ocupado")
         self.assertNotIn("form_llamar", pagina.context)
-        self.assertNotIn("form_iniciar", pagina.context)
+        self.assertIn("form_iniciar", pagina.context)
 
     def test_sin_javascript_las_tres_acciones_y_paginacion_son_html_nativo(self):
         self.registrar()

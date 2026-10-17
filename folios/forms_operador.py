@@ -6,7 +6,7 @@ from uuid import UUID, uuid4
 from django import forms
 from django.core import signing
 
-from .models import SolicitudOperador, validar_motivo
+from .models import Folio, SolicitudOperador, validar_motivo, validar_notas_resolucion
 
 
 DESTINOS_OPERADOR = frozenset({"usuarios:operacion", "usuarios:operador_actual"})
@@ -19,6 +19,7 @@ class IntencionOperador:
     solicitud_id: UUID
     destino: str
     pausa_id: int | None
+    folio_id: UUID | None = None
 
 
 class FormularioOperacion(forms.Form):
@@ -28,7 +29,7 @@ class FormularioOperacion(forms.Form):
     )
     operacion = None
 
-    def __init__(self, *args, actor, destino="usuarios:operacion", pausa_id=None, **kwargs):
+    def __init__(self, *args, actor, destino="usuarios:operacion", pausa_id=None, folio_id=None, **kwargs):
         kwargs.setdefault("auto_id", f"id_{self.operacion.lower()}_%s")
         super().__init__(*args, **kwargs)
         self.actor = actor
@@ -41,16 +42,26 @@ class FormularioOperacion(forms.Form):
                     raise ValueError("Reanudar requiere una pausa concreta.")
             elif pausa_id is not None:
                 raise ValueError("Solo reanudar recibe una pausa objetivo.")
-            self.initial["token"] = signing.dumps({
+            datos = {
                 "actor_id": actor.pk, "operacion": self.operacion,
                 "solicitud_id": str(uuid4()), "destino": destino, "pausa_id": pausa_id,
-            }, salt=_SALT)
+            }
+            con_folio = self.operacion in {SolicitudOperador.Operacion.INICIAR, SolicitudOperador.Operacion.FINALIZAR}
+            if con_folio:
+                if not isinstance(folio_id, (UUID, str)):
+                    raise ValueError(f"{self.operacion.capitalize()} requiere un folio concreto.")
+                datos["folio_id"] = str(UUID(folio_id) if isinstance(folio_id, str) else folio_id)
+            elif folio_id is not None:
+                raise ValueError("Solo iniciar y finalizar reciben un folio objetivo.")
+            self.initial["token"] = signing.dumps(datos, salt=_SALT)
 
     def clean_token(self):
         token = self.cleaned_data["token"]
         try:
             datos = signing.loads(token, salt=_SALT)
-            if not isinstance(datos, dict) or set(datos) != _CAMPOS:
+            con_folio = self.operacion in {SolicitudOperador.Operacion.INICIAR, SolicitudOperador.Operacion.FINALIZAR}
+            campos = _CAMPOS | {"folio_id"} if con_folio else _CAMPOS
+            if not isinstance(datos, dict) or set(datos) != campos:
                 raise ValueError
             if (
                 type(datos["actor_id"]) is not int or datos["actor_id"] != self.actor.pk
@@ -64,8 +75,13 @@ class FormularioOperacion(forms.Form):
                     raise ValueError
             elif datos["pausa_id"] is not None:
                 raise ValueError
+            folio_id = None
+            if con_folio:
+                if not isinstance(datos["folio_id"], str):
+                    raise ValueError
+                folio_id = UUID(datos["folio_id"])
             self.intencion = IntencionOperador(
-                UUID(datos["solicitud_id"]), datos["destino"], datos["pausa_id"],
+                UUID(datos["solicitud_id"]), datos["destino"], datos["pausa_id"], folio_id,
             )
         except (signing.BadSignature, TypeError, ValueError) as error:
             raise forms.ValidationError(
@@ -85,6 +101,10 @@ class FormularioLlamar(FormularioOperacion):
     operacion = SolicitudOperador.Operacion.LLAMAR
 
 
+class FormularioIniciar(FormularioOperacion):
+    operacion = SolicitudOperador.Operacion.INICIAR
+
+
 class FormularioPausa(FormularioOperacion):
     operacion = SolicitudOperador.Operacion.PAUSAR
     motivo = forms.CharField(
@@ -98,3 +118,25 @@ class FormularioPausa(FormularioOperacion):
 
 class FormularioReanudar(FormularioOperacion):
     operacion = SolicitudOperador.Operacion.REANUDAR
+
+
+class FormularioFinalizar(FormularioOperacion):
+    operacion = SolicitudOperador.Operacion.FINALIZAR
+    resultado = forms.ChoiceField(
+        label="Resultado de la atención",
+        choices=[
+            (Folio.Estado.FINALIZADO, "Finalizado"),
+            (Folio.Estado.DENEGADO, "Denegado"),
+        ],
+        widget=forms.Select(attrs={
+            "class": "campo", "aria-describedby": "ayuda-resultado",
+        }),
+        error_messages={"required": "Selecciona el resultado de la atención."},
+    )
+    notas_resolucion = forms.CharField(
+        label="Notas de resolución", strip=False, validators=[validar_notas_resolucion],
+        widget=forms.Textarea(attrs={
+            "class": "campo", "rows": 3, "aria-describedby": "ayuda-notas-resolucion",
+        }),
+        error_messages={"required": "Escribe las notas de resolución."},
+    )

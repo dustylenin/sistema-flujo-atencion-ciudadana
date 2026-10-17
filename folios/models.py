@@ -38,6 +38,8 @@ class Folio(RegistroFolioServicio):
         EN_ESPERA = "EN_ESPERA", "En espera"
         LLAMADO = "LLAMADO", "Llamado"
         EN_ATENCION = "EN_ATENCION", "En atención"
+        FINALIZADO = "FINALIZADO", "Finalizado"
+        DENEGADO = "DENEGADO", "Denegado"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     nombre_completo = models.TextField(validators=[validar_nombre_completo])
@@ -72,6 +74,7 @@ class Folio(RegistroFolioServicio):
                     models.Q(estado="EN_ESPERA", operador_responsable__isnull=True, inicio_atencion__isnull=True)
                     | models.Q(estado="LLAMADO", operador_responsable__isnull=False, inicio_atencion__isnull=True)
                     | models.Q(estado="EN_ATENCION", operador_responsable__isnull=False, inicio_atencion__isnull=False)
+                    | models.Q(estado__in=["FINALIZADO", "DENEGADO"], operador_responsable__isnull=True, inicio_atencion__isnull=False)
                 ),
                 name="folios_folio_estado_responsable",
             ),
@@ -99,6 +102,7 @@ class EventoFolio(RegistroFolioServicio):
         CREACION = "CREACION", "Creación"
         LLAMADO = "LLAMADO", "Llamado"
         INICIO = "INICIO", "Inicio de atención"
+        RESOLUCION = "RESOLUCION", "Resolución"
 
     folio = FoliosForeignKey(Folio, on_delete=models.PROTECT, related_name="eventos")
     actor = FoliosForeignKey(
@@ -147,6 +151,13 @@ class EventoFolio(RegistroFolioServicio):
                         actor=models.F("operador_responsable"),
                         asignacion_autorizante__isnull=True, oficina_contexto__isnull=False,
                     )
+                    | models.Q(
+                        operacion="RESOLUCION", estado_anterior__isnull=False,
+                        estado_anterior="EN_ATENCION", estado_nuevo__in=["FINALIZADO", "DENEGADO"],
+                        datos_iniciales__isnull=False, operador_responsable__isnull=False,
+                        actor=models.F("operador_responsable"),
+                        asignacion_autorizante__isnull=True, oficina_contexto__isnull=False,
+                    )
                 ),
                 name="folios_evento_campos_coherentes",
             ),
@@ -160,6 +171,11 @@ class EventoFolio(RegistroFolioServicio):
 def validar_motivo(value):
     if not value.strip():
         raise ValidationError("El motivo debe tener contenido.", code="motivo_vacio")
+
+
+def validar_notas_resolucion(value):
+    if not isinstance(value, str) or not value.strip():
+        raise ValidationError("Las notas de resolución deben tener contenido.", code="notas_resolucion_vacias")
 
 
 class PausaOperador(RegistroFolioServicio):
@@ -232,6 +248,7 @@ class SolicitudOperador(RegistroFolioServicio):
         REANUDAR = "REANUDAR", "Reanudar"
         LLAMAR = "LLAMAR", "Llamar"
         INICIAR = "INICIAR", "Iniciar atención"
+        FINALIZAR = "FINALIZAR", "Finalizar"
 
     class Resultado(models.TextChoices):
         PAUSADA = "PAUSADA", "Pausada"
@@ -245,6 +262,8 @@ class SolicitudOperador(RegistroFolioServicio):
         LLAMADO = "LLAMADO", "Llamado"
         INICIADA = "INICIADA", "Iniciada"
         YA_EN_ATENCION = "YA_EN_ATENCION", "Ya en atención"
+        FINALIZADO = "FINALIZADO", "Finalizado"
+        DENEGADO = "DENEGADO", "Denegado"
 
     operador = FoliosForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="solicitudes_operador"
@@ -254,7 +273,7 @@ class SolicitudOperador(RegistroFolioServicio):
         Folio, on_delete=models.PROTECT, null=True, blank=True,
         related_name="solicitudes_inicio_objetivo",
     )
-    operacion = models.CharField(max_length=8, choices=Operacion.choices)
+    operacion = models.CharField(max_length=12, choices=Operacion.choices)
     motivo_solicitado = models.TextField(null=True, blank=True)
     pausa_objetivo = FoliosForeignKey(
         PausaOperador, on_delete=models.PROTECT, null=True, blank=True,
@@ -343,6 +362,17 @@ class SolicitudOperador(RegistroFolioServicio):
                                 resultado__in=["YA_EN_ATENCION", "EN_PAUSA"],
                                 evento_folio_resultado__isnull=True,
                             )
+                        )
+                    )
+                    | (
+                        models.Q(
+                            operacion="FINALIZAR", motivo_solicitado__isnull=False,
+                            motivo_solicitado__regex=r"\S",
+                            pausa_objetivo__isnull=True, pausa_resultado__isnull=True,
+                            evento_resultado__isnull=True, folio_objetivo__isnull=False,
+                            folio_resultado__isnull=False, folio_objetivo=models.F("folio_resultado"),
+                            resultado__in=["FINALIZADO", "DENEGADO"],
+                            evento_folio_resultado__isnull=False,
                         )
                     )
                 ),

@@ -7,6 +7,8 @@
     <strong>No se pudo confirmar esta solicitud.</strong>
     {{ form.non_field_errors }}{{ form.token.errors }}
     {% if form.motivo.errors %}<ul>{% for error in form.motivo.errors %}<li><a href="#{{ form.motivo.id_for_label }}">Motivo de la pausa: {{ error }}</a></li>{% endfor %}</ul>{% endif %}
+    {% if form.resultado.errors %}<ul>{% for error in form.resultado.errors %}<li><a href="#{{ form.resultado.id_for_label }}">Resultado: {{ error }}</a></li>{% endfor %}</ul>{% endif %}
+    {% if form.notas_resolucion.errors %}<ul>{% for error in form.notas_resolucion.errors %}<li><a href="#{{ form.notas_resolucion.id_for_label }}">Notas de resolución: {{ error }}</a></li>{% endfor %}</ul>{% endif %}
   </div>
   {% if form.intencion %}
     <form class="tarjeta" method="post" action="{% url accion_ruta %}" data-envio-operador>

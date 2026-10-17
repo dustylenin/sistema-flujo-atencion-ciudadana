@@ -8,14 +8,35 @@
   {% include 'operador/_disponibilidad.html' %}
   {% if actual %}
     <section class="tarjeta" aria-labelledby="titulo-ciudadano">
-      <div class="encabezado-folio"><div><p class="ceja">Ciudadano</p><h2 class="nombre-ciudadano" id="titulo-ciudadano">{{ actual.nombre_completo }}</h2></div><span class="estado estado-llamado">{% if actual.estado == 'LLAMADO' %}Llamado{% else %}En atención{% endif %}</span></div>
+      <div class="encabezado-folio"><div><p class="ceja">Ciudadano</p><h2 class="nombre-ciudadano" id="titulo-ciudadano">{{ actual.nombre_completo }}</h2></div><span class="estado {% if actual.estado == 'LLAMADO' %}estado-llamado{% else %}estado-en-atencion{% endif %}">{% if actual.estado == 'LLAMADO' %}Llamado{% else %}En atención{% endif %}</span></div>
       <dl class="confirmacion">
         <div><dt>Oficina</dt><dd>{{ actual.oficina_nombre }}</dd></div>
         <div><dt>Trámite</dt><dd>{{ actual.tramite_nombre }}</dd></div>
         <div><dt>Fecha y hora de llegada original</dt><dd>{{ actual.llegada_original|date:'d/m/Y H:i:s T' }}</dd></div>
         <div><dt>Operador responsable</dt><dd>{{ disponibilidad.username }}</dd></div>
+        {% if actual.estado == 'EN_ATENCION' and inicio_atencion %}
+          <div><dt>Fecha y hora de inicio de atención</dt><dd><time datetime="{{ inicio_atencion|date:'c' }}">{{ inicio_atencion|date:'d/m/Y H:i:s T' }}</time></dd></div>
+        {% endif %}
       </dl>
-      <p class="aviso">Este folio está reservado a tu cargo. Pausar conserva su estado y responsabilidad.</p>
+      {% if actual.estado == 'LLAMADO' %}
+        <p class="aviso">Este folio está reservado a tu cargo. Cuando el ciudadano se presente, pulsa Iniciar atención.</p>
+        {% if disponibilidad.pausa_abierta_id %}
+          <p class="aviso" role="status">Primero debes reanudar para iniciar este folio. Reanudar no inicia automáticamente: después, pulsa Iniciar atención.</p>
+        {% elif form_iniciar %}
+          <form class="inicio-formulario" method="post" action="{% url 'usuarios:operador_iniciar' %}" data-envio-operador>
+            {% include 'operador/_formulario.html' with form=form_iniciar %}
+            <button class="boton primario" type="submit">Iniciar atención</button>
+          </form>
+        {% endif %}
+      {% else %}
+        <p class="aviso">La atención permanece a tu cargo. Pausar conserva su estado, responsabilidad y fecha de inicio.</p>
+        {% if form_finalizar %}
+          <form class="finalizar-formulario" method="post" action="{% url 'usuarios:operador_finalizar' %}" data-envio-operador>
+            {% include 'operador/_formulario.html' with form=form_finalizar %}
+            <button class="boton primario" type="submit">Finalizar atención</button>
+          </form>
+        {% endif %}
+      {% endif %}
     </section>
   {% else %}
     <section class="tarjeta" aria-labelledby="titulo-vacio">

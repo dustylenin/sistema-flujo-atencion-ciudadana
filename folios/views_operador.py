@@ -9,11 +9,16 @@ from django.views.decorators.http import require_GET, require_POST
 from usuarios.acceso import requiere_rol
 from usuarios.models import Usuario
 
-from .forms_operador import FormularioLlamar, FormularioPausa, FormularioReanudar
+from .forms_operador import (
+    FormularioFinalizar, FormularioIniciar, FormularioLlamar, FormularioPausa, FormularioReanudar,
+)
+from .lecturas_inicio_operador import consultar_inicio_actual_operador
 from .services_disponibilidad import (
     Disponibilidad, consultar_disponibilidad, pausar_operador, reanudar_operador,
 )
 from .services_llamado import EstadoLlamado, llamar_siguiente
+from .services_inicio import iniciar_atencion
+from .services_resolucion import finalizar_atencion
 from .services_operador import consultar_folio_actual_operador, consultar_pendientes_operador
 
 
@@ -21,6 +26,8 @@ _ACCIONES = {
     "LLAMAR": ("Llamar siguiente", "usuarios:operador_llamar"),
     "PAUSAR": ("Confirmar pausa", "usuarios:operador_pausar"),
     "REANUDAR": ("Reanudar atención", "usuarios:operador_reanudar"),
+    "INICIAR": ("Iniciar atención", "usuarios:operador_iniciar"),
+    "FINALIZAR": ("Finalizar atención", "usuarios:operador_finalizar"),
 }
 _RESULTADOS = {
     "LLAMADO": ("Se realizó el llamado. El folio quedó a tu cargo.", "llamado realizado"),
@@ -30,8 +37,17 @@ _RESULTADOS = {
     "SIN_PENDIENTES": ("No hay pendientes en tu cola. No se realizó un llamado.", "sin pendientes; sin llamado"),
     "PAUSADA": ("Se registró la pausa. Conservas tu folio, si lo tienes.", "pausa registrada"),
     "YA_EN_PAUSA": ("La pausa ya estaba abierta. No se creó otra pausa.", "pausa ya abierta"),
-    "REANUDADA": ("Se cerró esa pausa. Consulta tu disponibilidad actual.", "pausa cerrada"),
+    "REANUDADA": ("Se cerró esa pausa. Reanudar no inicia automáticamente la atención.", "pausa cerrada"),
     "YA_REANUDADA": ("Esa pausa ya estaba cerrada. No se cerró otra pausa.", "pausa ya cerrada"),
+}
+_RESULTADOS_INICIO = {
+    "INICIADA": ("Se inició la atención. El folio continúa a tu cargo.", "atención iniciada"),
+    "YA_EN_ATENCION": ("La atención ya estaba iniciada. No se registró otro inicio.", "atención ya iniciada; sin otro inicio"),
+    "EN_PAUSA": ("Primero debes reanudar. No se inició la atención. Después, pulsa Iniciar atención.", "en pausa; sin inicio de atención"),
+}
+_RESULTADOS_RESOLUCION = {
+    "FINALIZADO": ("Se finalizó la atención con éxito.", "atención finalizada"),
+    "DENEGADO": ("Se registró la atención como denegada.", "atención denegada"),
 }
 
 
@@ -45,9 +61,17 @@ def _pantalla(request, pagina):
     cambio = (
         (referencia.folio_id, referencia.estado, referencia.oficina_id) if referencia else None
     ) != ((actual.folio_id, actual.estado, actual.oficina_id) if actual else None)
+    inicio_atencion = None
+    if pagina == "actual" and actual is not None and actual.estado == "EN_ATENCION":
+        inicio = consultar_inicio_actual_operador(actor=request.user)
+        if inicio is not None and (inicio.folio_id, inicio.estado) == (actual.folio_id, actual.estado):
+            inicio_atencion = inicio.inicio_atencion
+        if inicio_atencion is None:
+            cambio = True
     contexto = {
         "pagina": pagina, "disponibilidad": disponibilidad, "actual": actual,
         "cambio_durante_lectura": cambio, "destino": destino,
+        "inicio_atencion": inicio_atencion,
         "disponibilidad_texto": {
             Disponibilidad.LIBRE: "Libre", Disponibilidad.OCUPADO: "Ocupado",
             Disponibilidad.EN_PAUSA: "En pausa",
@@ -55,6 +79,21 @@ def _pantalla(request, pagina):
     }
     if disponibilidad.disponibilidad == Disponibilidad.LIBRE and actual is None and not cambio:
         contexto["form_llamar"] = FormularioLlamar(actor=request.user, destino=destino)
+    if (
+        pagina == "actual" and actual is not None and actual.estado == "LLAMADO"
+        and disponibilidad.pausa_abierta_id is None
+        and disponibilidad.disponibilidad == Disponibilidad.OCUPADO and not cambio
+    ):
+        contexto["form_iniciar"] = FormularioIniciar(
+            actor=request.user, destino=destino, folio_id=actual.folio_id,
+        )
+    if (
+        pagina == "actual" and actual is not None and actual.estado == "EN_ATENCION"
+        and not cambio
+    ):
+        contexto["form_finalizar"] = FormularioFinalizar(
+            actor=request.user, destino=destino, folio_id=actual.folio_id,
+        )
     if disponibilidad.pausa_abierta_id is not None:
         contexto["form_reanudar"] = FormularioReanudar(
             actor=request.user, destino=destino, pausa_id=disponibilidad.pausa_abierta_id,
@@ -88,7 +127,7 @@ def actual(request):
 
 def _error_accion(request, form, *, status=400):
     # Un POST fallido conserva token, clave y captura; no crea otra intención,
-    # no sustituye la pausa y no necesita nuevas lecturas de negocio.
+    # no sustituye pausa ni folio y no necesita nuevas lecturas de negocio.
     form.marcar_errores()
     destino = form.intencion.destino if form.intencion else "usuarios:operacion"
     texto, ruta = _ACCIONES[form.operacion]
@@ -119,6 +158,16 @@ def _procesar(request, formulario):
                 actor=request.user, solicitud_id=intencion.solicitud_id,
                 motivo=form.cleaned_data["motivo"],
             )
+        elif form.operacion == "INICIAR":
+            resultado = iniciar_atencion(
+                actor=request.user, solicitud_id=intencion.solicitud_id, folio_id=intencion.folio_id,
+            )
+        elif form.operacion == "FINALIZAR":
+            resultado = finalizar_atencion(
+                actor=request.user, solicitud_id=intencion.solicitud_id, folio_id=intencion.folio_id,
+                resultado=form.cleaned_data["resultado"],
+                notas_resolucion=form.cleaned_data["notas_resolucion"],
+            )
         else:
             resultado = reanudar_operador(
                 actor=request.user, solicitud_id=intencion.solicitud_id, pausa_id=intencion.pausa_id,
@@ -130,7 +179,12 @@ def _procesar(request, formulario):
     except DatabaseError:
         form.add_error(None, "No se pudo confirmar la respuesta. Reintenta este mismo formulario sin cambiar los datos.")
         return _error_accion(request, form, status=503)
-    mensaje, historico = _RESULTADOS[resultado.resultado]
+    resultados = (
+        _RESULTADOS_INICIO if form.operacion == "INICIAR"
+        else _RESULTADOS_RESOLUCION if form.operacion == "FINALIZAR"
+        else _RESULTADOS
+    )
+    mensaje, historico = resultados[resultado.resultado]
     if resultado.repetida:
         messages.info(request, (
             f"Solicitud ya procesada. Resultado original: {historico}. "
@@ -140,7 +194,7 @@ def _procesar(request, formulario):
         messages.info(request, mensaje, extra_tags="operador")
     destino = (
         "usuarios:operador_actual"
-        if form.operacion == "LLAMAR" and resultado.resultado == EstadoLlamado.LLAMADO
+        if form.operacion == "INICIAR" or (form.operacion == "LLAMAR" and resultado.resultado == EstadoLlamado.LLAMADO)
         else intencion.destino
     )
     return redirect(destino)
@@ -162,3 +216,15 @@ def pausar(request):
 @require_POST
 def reanudar(request):
     return _procesar(request, FormularioReanudar)
+
+
+@requiere_rol(Usuario.Rol.OPERADOR)
+@require_POST
+def iniciar(request):
+    return _procesar(request, FormularioIniciar)
+
+
+@requiere_rol(Usuario.Rol.OPERADOR)
+@require_POST
+def finalizar(request):
+    return _procesar(request, FormularioFinalizar)

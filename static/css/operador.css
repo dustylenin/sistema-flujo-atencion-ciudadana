@@ -9,6 +9,8 @@ textarea { font: inherit; resize: vertical; }
 .disponibilidad-libre { background: #edf5ef; color: #31593b; border-color: #70907a; }
 .disponibilidad-ocupado, .estado-llamado { background: #edf1f7; color: #354e70; border-color: #899bb5; }
 .disponibilidad-en_pausa { background: #f0e3e8; color: var(--tinto); border-color: #a98490; }
+.estado-en-atencion { background: #edf5ef; color: #31593b; border-color: #70907a; }
+.inicio-formulario { margin-top: 20px; }
 .acciones-operador { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: flex-end; gap: 12px; max-width: 52%; }
 .acciones-operador .boton { white-space: nowrap; }
 .pausa-formulario { min-width: 0; }
@@ -46,4 +48,5 @@ form[aria-busy="true"] { opacity: .75; }
   .nav-enlace { flex: 1 1 auto; margin: 0; }
   .titulo-pagina > .boton, .acciones-operador, .acciones-operador > *, .acciones-operador .boton, .paginacion .boton { width: 100%; }
   .encabezado-folio { align-items: flex-start; flex-direction: column; }
+  .inicio-formulario .boton { width: 100%; }
 }

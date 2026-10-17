@@ -19,5 +19,7 @@ urlpatterns = [
     path("operacion/llamar/", operador_views.llamar, name="operador_llamar"),
     path("operacion/pausar/", operador_views.pausar, name="operador_pausar"),
     path("operacion/reanudar/", operador_views.reanudar, name="operador_reanudar"),
+    path("operacion/iniciar/", operador_views.iniciar, name="operador_iniciar"),
+    path("operacion/finalizar/", operador_views.finalizar, name="operador_finalizar"),
     path("administracion/", views.administracion, name="administracion"),
 ]

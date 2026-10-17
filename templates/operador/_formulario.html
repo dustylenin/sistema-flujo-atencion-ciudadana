@@ -8,3 +8,19 @@
     <div id="error-motivo">{{ form.motivo.errors }}</div>
   </div>
 {% endif %}
+{% if form.resultado %}
+  <div class="grupo">
+    <label for="{{ form.resultado.id_for_label }}">Resultado de la atención <span aria-hidden="true">*</span></label>
+    {{ form.resultado }}
+    <p class="ayuda" id="ayuda-resultado">Obligatorio. Selecciona si la atención fue finalizada o denegada.</p>
+    <div id="error-resultado">{{ form.resultado.errors }}</div>
+  </div>
+{% endif %}
+{% if form.notas_resolucion %}
+  <div class="grupo">
+    <label for="{{ form.notas_resolucion.id_for_label }}">Notas de resolución <span aria-hidden="true">*</span></label>
+    {{ form.notas_resolucion }}
+    <p class="ayuda" id="ayuda-notas-resolucion">Obligatorio. Describe lo ocurrido durante la atención.</p>
+    <div id="error-notas-resolucion">{{ form.notas_resolucion.errors }}</div>
+  </div>
+{% endif %}
