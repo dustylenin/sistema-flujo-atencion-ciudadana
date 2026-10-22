@@ -1,0 +1,144 @@
+{% extends "administracion/base.html" %}
+{% block title %}Gestión de Trámites{% endblock %}
+{% block ubicacion %}Trámites{% endblock %}
+
+{% block content %}
+  <div class="titulo-pagina">
+    <div>
+      <p class="ceja">Administración del sistema</p>
+      <h1>Gestión de Trámites</h1>
+      <p class="introduccion">Catálogo y configuración de trámites por oficina de atención ciudadana.</p>
+    </div>
+    <button class="boton primario" type="button" id="btn-nuevo-tramite" onclick="document.getElementById('dialog-nuevo-tramite').showModal()">Nuevo trámite</button>
+  </div>
+
+  <section class="tarjeta" aria-labelledby="titulo-tramites">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <h2 id="titulo-tramites" style="margin: 0;">Trámites registrados</h2>
+      <button class="boton primario" type="button" onclick="document.getElementById('dialog-nuevo-tramite').showModal()">Nuevo trámite</button>
+    </div>
+    <p class="ayuda">Listado de trámites disponibles en el sistema y su oficina responsable.</p>
+
+    <div class="tabla-contenedor" role="region" aria-label="Catálogo de trámites" tabindex="0">
+      <table>
+        <caption class="solo-lectores">Trámites registrados en el sistema</caption>
+        <thead>
+          <tr>
+            <th scope="col">Trámite</th>
+            <th scope="col">Estado</th>
+            <th scope="col">Oficina responsable</th>
+            <th scope="col">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tramite in tramites %}
+            <tr>
+              <th scope="row"><strong>{{ tramite.nombre }}</strong></th>
+              <td>
+                {% if tramite.activo %}
+                  <span class="estado estado-en-atencion">Activo</span>
+                {% else %}
+                  <span class="estado disponibilidad-en_pausa">Inactivo</span>
+                {% endif %}
+              </td>
+              <td>{{ tramite.oficina.nombre }}</td>
+              <td>
+                <div class="acciones" style="justify-content: flex-start; gap: 8px;">
+                  <button class="boton secundario" type="button">Editar</button>
+                  <button class="boton secundario" type="button">{% if tramite.activo %}Desactivar{% else %}Activar{% endif %}</button>
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="4">
+                <p class="aviso" role="status">No hay trámites registrados en el sistema.</p>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <dialog id="dialog-nuevo-tramite" class="tarjeta" aria-labelledby="titulo-modal" style="max-width: 540px; width: 100%;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h2 id="titulo-modal" style="margin: 0;">Nuevo trámite</h2>
+      <button type="button" class="salir" id="btn-cerrar-modal" style="color: var(--texto); border-color: #8c8790;" onclick="document.getElementById('dialog-nuevo-tramite').close()" aria-label="Cerrar modal">✕</button>
+    </div>
+    {% if form.errors %}
+      <div class="error resumen" role="alert" tabindex="-1">
+        <strong>Revisa los datos antes de guardar.</strong>
+        <ul>
+          {% for field in form %}
+            {% for error in field.errors %}
+              <li>{{ field.label }}: {{ error }}</li>
+            {% endfor %}
+          {% endfor %}
+          {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    <form method="post" action="{% url 'tramites:gestion_tramites' %}">
+      {% csrf_token %}
+      <div class="grupo grupo-campo">
+        <label for="id_nombre">Nombre <span aria-hidden="true">*</span></label>
+        <input type="text" name="nombre" id="id_nombre" class="campo" required maxlength="150" placeholder="Ej. Licencia de conducir" value="{{ form.nombre.value|default_if_none:'' }}"{% if form.nombre.errors %} aria-invalid="true"{% endif %}>
+        {% if form.nombre.errors %}
+          <div class="errorlist">{{ form.nombre.errors }}</div>
+        {% endif %}
+      </div>
+      <div class="grupo grupo-campo">
+        <label for="id_descripcion">Descripción <span class="opcional">Opcional</span></label>
+        <textarea name="descripcion" id="id_descripcion" class="campo" rows="3" placeholder="Descripción u observaciones del trámite">{{ form.descripcion.value|default_if_none:'' }}</textarea>
+        {% if form.descripcion.errors %}
+          <div class="errorlist">{{ form.descripcion.errors }}</div>
+        {% endif %}
+      </div>
+      <div class="grupo grupo-campo">
+        <label for="id_oficina_id">Oficina responsable <span aria-hidden="true">*</span></label>
+        <select name="oficina_id" id="id_oficina_id" class="campo" required{% if form.oficina_id.errors %} aria-invalid="true"{% endif %}>
+          <option value="" disabled{% if not form.oficina_id.value %} selected{% endif %}>Selecciona una oficina</option>
+          {% for oficina in oficinas %}
+            <option value="{{ oficina.id }}"{% if form.oficina_id.value|stringformat:'s' == oficina.id|stringformat:'s' %} selected{% endif %}>{{ oficina.nombre }}</option>
+          {% endfor %}
+        </select>
+        {% if form.oficina_id.errors %}
+          <div class="errorlist">{{ form.oficina_id.errors }}</div>
+        {% endif %}
+      </div>
+      <div class="grupo grupo-campo">
+        <label for="id_activo">Estado</label>
+        <select name="activo" id="id_activo" class="campo">
+          <option value="true"{% if form.activo.value|stringformat:'s' != 'false' %} selected{% endif %}>Activo</option>
+          <option value="false"{% if form.activo.value|stringformat:'s' == 'false' %} selected{% endif %}>Inactivo</option>
+        </select>
+        {% if form.activo.errors %}
+          <div class="errorlist">{{ form.activo.errors }}</div>
+        {% endif %}
+      </div>
+      <div class="acciones" style="margin-top: 24px;">
+        <button type="button" class="boton secundario" onclick="document.getElementById('dialog-nuevo-tramite').close()">Cancelar</button>
+        <button type="submit" class="boton primario">Guardar trámite</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      var modal = document.getElementById("dialog-nuevo-tramite");
+      if (modal) {
+        modal.addEventListener("click", function(event) {
+          if (event.target === modal) {
+            modal.close();
+          }
+        });
+        {% if form.errors %}
+          modal.showModal();
+        {% endif %}
+      }
+    });
+  </script>
+{% endblock %}
